@@ -142,7 +142,7 @@ def train(model_name, train_loader, device, max_n_gram_len, num_epochs):
 
         print('Total train loss after epoch {} is {}.'.format(str(i+1),str(total_loss)))
         eval(model, tokenizer, dev_loader, device, max_n_gram_len)
-        torch.save(x, 'model.pt')
+        torch.save(model, 'model.pt')
 
 
 

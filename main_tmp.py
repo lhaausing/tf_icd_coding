@@ -91,6 +91,7 @@ class NGramTransformer(nn.Module):
 def eval(model, tokenizer, dev_loader, device, max_n_gram_len):
     model.eval()
     total_loss = 0.
+    num_examples = 0
     criterion = torch.nn.BCEWithLogitsLoss()
 
     with torch.no_grad():
@@ -105,11 +106,12 @@ def eval(model, tokenizer, dev_loader, device, max_n_gram_len):
 
             outputs = model(input_ids, attention_mask)
             loss = criterion(outputs, batch_labels)
-            total_loss += loss.item()
+            total_loss += loss.item() * outputs.size()[0]
+            num_examples += outputs.size()[0]
 
             preds = (outputs > 0).type('torch.FloatTensor')
 
-    print('Total eval loss after epoch is {}.'.format(str(total_loss)))
+    print('Total eval loss after epoch is {}.'.format(str(total_loss / num_examples)))
 
 
 def train(model_name, train_loader, device, max_n_gram_len, num_epochs):
@@ -122,6 +124,7 @@ def train(model_name, train_loader, device, max_n_gram_len, num_epochs):
 
     for i in range(num_epochs):
         total_loss = 0.
+        num_examples = 0
         for idx, (batch_texts, batch_ids, batch_labels) in enumerate(train_loader):
 
             batch_texts = list(batch_texts)
@@ -138,9 +141,10 @@ def train(model_name, train_loader, device, max_n_gram_len, num_epochs):
             loss.backward()
             optimizer.step()
             model.zero_grad()
-            total_loss += loss.item()
+            total_loss += loss.item() * outputs.size()[0]
+            num_examples += outputs.size()[0]
 
-        print('Total train loss after epoch {} is {}.'.format(str(i+1),str(total_loss)))
+        print('Average train loss after epoch {} is {}.'.format(str(i+1),str(total_loss / num_examples = 0)))
         eval(model, tokenizer, dev_loader, device, max_n_gram_len)
         torch.save(model, 'model.pt')
 

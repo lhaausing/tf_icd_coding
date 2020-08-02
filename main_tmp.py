@@ -21,7 +21,7 @@ max_n_gram_len = 64
 batch_size_train = 32
 batch_size_dev = 32
 batch_size_test = 32
-path = '/content/drive/My Drive'
+path = '/scratch/xl3119/Multi-Filter-Residual-Convolutional-Neural-Network/data/mimic3'
 
 class mimic3_dataset(Dataset):
 

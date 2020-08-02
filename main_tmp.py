@@ -21,7 +21,6 @@ batch_size_dev = 32
 batch_size_test = 32
 path = '/content/drive/My Drive'
 
-
 class mimic3_dataset(Dataset):
 
     def __init__(self, texts, labels):
@@ -94,6 +93,10 @@ def eval(model, tokenizer, dev_loader, device, max_n_gram_len):
     num_examples = 0
     criterion = torch.nn.BCEWithLogitsLoss()
 
+    test_y_hat = []
+    test_y_hat_raw = []
+    test_y = []
+
     with torch.no_grad():
         for idx, (batch_texts, batch_ids, batch_labels) in enumerate(dev_loader):
 
@@ -109,7 +112,14 @@ def eval(model, tokenizer, dev_loader, device, max_n_gram_len):
             total_loss += loss.item() * outputs.size()[0]
             num_examples += outputs.size()[0]
 
-            preds = (outputs > 0).type('torch.FloatTensor')
+            test_y.append(batch_labels.cpu().detach().numpy())
+            test_y_hat.append(np.round(torch.sigmoid(outputs).cpu().detach().numpy()))
+            test_y_hat_raw.append(torch.sigmoid(outputs).cpu().detach().numpy())
+
+        test_y = np.concatenate(test_y, axis=0)
+        test_y_hat = np.concatenate(test_y_hat, axis=0)
+        test_y_hat_raw = np.concatenate(test_y_hat_raw, axis=0)
+        metrics = all_metrics(yhat, y, k=k, yhat_raw=yhat_raw)
 
     print('Total eval loss after epoch is {}.'.format(str(total_loss / num_examples)))
 
@@ -144,7 +154,7 @@ def train(model_name, train_loader, device, max_n_gram_len, num_epochs):
             total_loss += loss.item() * outputs.size()[0]
             num_examples += outputs.size()[0]
 
-        print('Average train loss after epoch {} is {}.'.format(str(i+1),str(total_loss / num_examples = 0)))
+        print('Average train loss after epoch {} is {}.'.format(str(i+1),str(total_loss / num_examples)))
         eval(model, tokenizer, dev_loader, device, max_n_gram_len)
         torch.save(model, 'model.pt')
 

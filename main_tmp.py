@@ -119,9 +119,9 @@ def eval(model, tokenizer, dev_loader, device, max_n_gram_len):
             yhat.append(np.round(torch.sigmoid(outputs).cpu().detach().numpy()))
             yhat_raw.append(torch.sigmoid(outputs).cpu().detach().numpy())
 
-        y = np.concatenate(test_y, axis=0)
-        yhat = np.concatenate(test_y_hat, axis=0)
-        yhat_raw = np.concatenate(test_y_hat_raw, axis=0)
+        y = np.concatenate(y, axis=0)
+        yhat = np.concatenate(yhat, axis=0)
+        yhat_raw = np.concatenate(yhat_raw, axis=0)
         metrics = all_metrics(yhat, y, k=k, yhat_raw=yhat_raw)
         metrics = all_metrics(yhat, y, k=k, yhat_raw=yhat_raw)
         print_metrics(metrics)

@@ -200,4 +200,3 @@ test_loader = DataLoader(dataset=test_dataset,
                          shuffle=True)
 
 train(model_name, train_loader, device, max_n_gram_len, num_epochs)
-eval(model, tokenizer, dev_loader, device, max_n_gram_len)

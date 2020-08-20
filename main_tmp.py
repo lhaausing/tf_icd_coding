@@ -40,7 +40,7 @@ class mimic3_dataset(Dataset):
         return [self.texts[key], self.idx[key], self.labels[key]]
 
 
-def calculate_ngram_position_matrix(attn_mask = None, max_ngram_size = None, model_device = None):
+def calculate_ngram_position_matrix(attn_mask = None, max_ngram_size = None, model_device = None, sep_cls = True):
 
     for i, elem in enumerate([attn_mask, max_ngram_size, model_device]):
         if elem is None:
@@ -50,6 +50,8 @@ def calculate_ngram_position_matrix(attn_mask = None, max_ngram_size = None, mod
         attn_mask = attn_mask.to(model_device)
 
     batch_sent_lens = torch.sum(attn_mask,1)
+    if sep_cls:
+        batch_sent_lens -= 1
     max_sent_len = torch.max(batch_sent_lens).item()
     num_n_grams = [math.ceil(elem / max_ngram_size) for elem in batch_sent_lens.tolist()]
     max_num_n_grams = max(num_n_grams)
@@ -60,6 +62,13 @@ def calculate_ngram_position_matrix(attn_mask = None, max_ngram_size = None, mod
         n_gram_pos[i] = n_gram_pos[i] + [-1]*(max_num_n_grams+1-len(n_gram_pos[i]))
     n_gram_pos_matrix = [torch.cat([((arange_t>=elem[i])*(arange_t<elem[i+1])).unsqueeze(0) for i in range(max_num_n_grams)]).unsqueeze(0) for elem in n_gram_pos]
     n_gram_pos_matrix = torch.cat(n_gram_pos_matrix).to(model_device)
+
+    if sep_cls:
+        size = n_gram_pos_matrix.size()
+        zero_pos = torch.zeros(size[0],size[1],1,dtype=torch.bool).to(model_device)
+        cls_pos = torch.BoolTensor([[[1]+[0]*(size[2])]]*size[0]).to(model_device)
+        n_gram_pos_matrix = torch.cat([zero_pos, n_gram_pos_matrix], dim=2)
+        n_gram_pos_matrix = torch.cat([cls_pos, n_gram_pos_matrix], dim=1)
 
     return n_gram_pos_matrix.type(torch.FloatTensor).to(model_device)
 

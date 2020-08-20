@@ -55,7 +55,7 @@ def calculate_ngram_position_matrix(attn_mask = None, max_ngram_size = None, mod
     max_num_n_grams = max(num_n_grams)
     arange_t = torch.arange(max_sent_len)
 
-    n_gram_pos = [[min(j * max_n_gram_len, batch_sent_lens[i].item()) for j in range(elem+1)] for i, elem in enumerate(num_n_grams)]
+    n_gram_pos = [[min(j * max_ngram_size, batch_sent_lens[i].item()) for j in range(elem+1)] for i, elem in enumerate(num_n_grams)]
     for i in range(len(n_gram_pos)):
         n_gram_pos[i] = n_gram_pos[i] + [-1]*(max_num_n_grams+1-len(n_gram_pos[i]))
     n_gram_pos_matrix = [torch.cat([((arange_t>=elem[i])*(arange_t<elem[i+1])).unsqueeze(0) for i in range(max_num_n_grams)]).unsqueeze(0) for elem in n_gram_pos]

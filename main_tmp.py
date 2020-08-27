@@ -22,6 +22,7 @@ batch_size_train = 32
 batch_size_dev = 32
 batch_size_test = 32
 path = '/scratch/xl3119/Multi-Filter-Residual-Convolutional-Neural-Network/data/mimic3'
+use_attention = True
 
 class mimic3_dataset(Dataset):
 
@@ -97,6 +98,38 @@ class NGramTransformer(nn.Module):
 
         return logit
 
+class NGramTransformer_Attn(nn.Module):
+
+    def __init__(self, model_name='', max_n_gram_len = 32, n_class = 50,device= 'cuda:0'):
+        super().__init__()
+        if not model_name:
+            raise NameError('You have to give a model name from transformers library.')
+        self.hidden_size = self.transformers_model.config.hidden_size
+        self.class_size = n_class
+        self.max_n_gram_len = max_n_gram_len
+        self.device = device
+
+        self.transformers_model = AutoModel.from_pretrained(model_name)
+        self.word_embeddings = self.transformers_model.embeddings.word_embeddings
+        self.attn_layer = nn.Linear(self.hidden_size, self.class_size)
+        self.out_layer = nn.Linear(self.hidden_size)
+
+
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, position_ids=None, inputs_embeds=None):
+        embeds = self.word_embeddings(input_ids)
+        ngram_pos_matrix = calculate_ngram_position_matrix(attn_mask=attention_mask,
+                                                           max_ngram_size=self.max_n_gram_len,
+                                                           model_device=self.device)
+
+        embeds = torch.bmm(ngram_pos_matrix, embeds)
+        embeds, cls_embeds  = self.transformers_model(inputs_embeds=embeds)
+        #logit = self.out_layer(embeds[:,0,:])
+        attn_weights = F.softmax(self.attn_layer(embeds))
+        attn_weights = torch.transpose(attn_weights, 1, 2)
+        attn_outputs = torch.bmm(attn_weights,embeds)
+        logit = self.outlayer(-1,self.class_size)
+
+        return logit
 
 def eval(model, tokenizer, dev_loader, device, max_n_gram_len):
     model.eval()
@@ -140,7 +173,10 @@ def eval(model, tokenizer, dev_loader, device, max_n_gram_len):
 
 def train(model_name, train_loader, device, max_n_gram_len, num_epochs):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = NGramTransformer(model_name, max_n_gram_len).to(device)
+    if use_attention:
+        model = NGramTransformer_Attn(model_name, max_n_gram_len).to(device)
+    else:
+        model = NGramTransformer(model_name, max_n_gram_len).to(device)
     optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=2e-05, eps=1e-08)
     criterion = torch.nn.BCEWithLogitsLoss()
     model.zero_grad()

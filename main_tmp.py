@@ -19,9 +19,9 @@ model_name = 'bert-base-uncased'
 device = 'cuda:0'
 num_epochs = 50
 max_n_gram_len = 32
-batch_size_train = 32
-batch_size_dev = 32
-batch_size_test = 32
+batch_size_train = 8
+batch_size_dev = 8
+batch_size_test = 8
 path = '/scratch/xl3119/Multi-Filter-Residual-Convolutional-Neural-Network/data/mimic3'
 use_attention = True
 
@@ -125,8 +125,8 @@ class NGramTransformer_Attn(nn.Module):
         embeds = torch.bmm(ngram_pos_matrix, embeds)
         embeds, cls_embeds  = self.transformers_model(inputs_embeds=embeds)
         #logit = self.out_layer(embeds[:,0,:])
-        attn_weights = F.softmax(self.attn_layer(embeds))
-        attn_weights = torch.transpose(attn_weights, 1, 2)
+        attn_weights = torch.transpose(self.attn_layer(embeds), 1, 2)
+        attn_weights = F.softmax(attn_weights)
         attn_outputs = torch.bmm(attn_weights,embeds)
         logit = self.out_layer(attn_outputs)
         logit = logit.view(-1, self.class_size)

@@ -7,6 +7,7 @@ from os.path import join
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
 import transformers
@@ -104,15 +105,15 @@ class NGramTransformer_Attn(nn.Module):
         super().__init__()
         if not model_name:
             raise NameError('You have to give a model name from transformers library.')
+        self.transformers_model = AutoModel.from_pretrained(model_name)
         self.hidden_size = self.transformers_model.config.hidden_size
         self.class_size = n_class
         self.max_n_gram_len = max_n_gram_len
         self.device = device
 
-        self.transformers_model = AutoModel.from_pretrained(model_name)
         self.word_embeddings = self.transformers_model.embeddings.word_embeddings
         self.attn_layer = nn.Linear(self.hidden_size, self.class_size)
-        self.out_layer = nn.Linear(self.hidden_size)
+        self.out_layer = nn.Linear(self.hidden_size, 1)
 
 
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, position_ids=None, inputs_embeds=None):
@@ -127,7 +128,8 @@ class NGramTransformer_Attn(nn.Module):
         attn_weights = F.softmax(self.attn_layer(embeds))
         attn_weights = torch.transpose(attn_weights, 1, 2)
         attn_outputs = torch.bmm(attn_weights,embeds)
-        logit = self.outlayer(-1,self.class_size)
+        logit = self.out_layer(attn_outputs)
+        logit = logit.view(-1, self.class_size)
 
         return logit
 

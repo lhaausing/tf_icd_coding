@@ -24,6 +24,8 @@ batch_size_dev = 8
 batch_size_test = 8
 path = '/scratch/xl3119/Multi-Filter-Residual-Convolutional-Neural-Network/data/mimic3'
 use_attention = True
+multi_gpu = True
+num_gpu = 3
 
 class mimic3_dataset(Dataset):
 
@@ -179,6 +181,10 @@ def train(model_name, train_loader, device, max_n_gram_len, num_epochs):
         model = NGramTransformer_Attn(model_name, max_n_gram_len).to(device)
     else:
         model = NGramTransformer(model_name, max_n_gram_len).to(device)
+
+    if multi_gpu:
+        device_ids = [i for i in range(num_gpu)]
+        model = torch.nn.DataParallel(model, device_ids= device_ids)
     optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=2e-05, eps=1e-08)
     criterion = torch.nn.BCEWithLogitsLoss()
     model.zero_grad()

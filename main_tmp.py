@@ -71,7 +71,7 @@ class NGramTransformer(nn.Module):
         embeds, cls_embeds  = self.bert(inputs_embeds=embeds)
         logits = self.out_layer(embeds[:,0,:])
 
-        return logit
+        return logits
 
 class NGramTransformer_Attn(nn.Module):
 
@@ -94,9 +94,9 @@ class NGramTransformer_Attn(nn.Module):
         attn_weights = F.softmax(attn_weights)
         attn_outputs = torch.bmm(attn_weights,embeds)
         logits = self.out_layer(attn_outputs)
-        logits = logit.view(-1, self.class_size)
+        logits = logits.view(-1, self.class_size)
 
-        return logit
+        return logits
 
 def eval(model, tokenizer, dev_loader, device, ngram_size):
     model.eval()

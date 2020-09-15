@@ -15,7 +15,7 @@ from transformers import AutoTokenizer, AutoModel
 
 from utils import all_metrics, print_metrics, get_ngram_encoding
 
-model_name = 'bert-base-uncased'
+model_name = 'bert-base-uncased-dir'
 device = 'cuda:0'
 num_epochs = 50
 ngram_size = 32
@@ -32,7 +32,6 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 class mimic3_dataset(Dataset):
 
     def __init__(self, texts, labels, tokenizer):
-
         self.texts = texts
         self.idx = list(range(len(labels)))
         self.labels = labels
@@ -44,30 +43,17 @@ class mimic3_dataset(Dataset):
         return len(self.texts)
 
     def __getitem__(self, key):
-
         return [self.texts[key], self.idx[key], self.labels[key]]
 
     def mimic3_col_func(self, batch):
-
         batch_inputs = tokenizer([elem[0] for elem in batch], return_tensors="pt", padding=True)
-
         input_ids = batch_inputs["input_ids"]
-        attn_mask = batch_inputs['attention_mask']
-
-        ngram_encoding = get_ngram_encoding(attn_mask=attn_mask, ngram_size=self.ngram_size, sep_cls=True)
-
-        labels = torch.cat([elem[2] for elem in batch], dim = 0).type('torch.FloatTensor')
+        ngram_encoding = get_ngram_encoding(attn_mask=batch_inputs['attention_mask'],
+                                            ngram_size=self.ngram_size,
+                                            sep_cls=True)
+        labels = torch.cat([elem[2] for elem in batch], dim=0).type('torch.FloatTensor')
 
         return (input_ids, ngram_encoding, labels)
-
-    if sep_cls:
-        size = ngram_encoding.size()
-        zero_pos = torch.zeros(size[0],size[1],1,dtype=torch.bool)
-        cls_pos = torch.BoolTensor([[[1]+[0]*(size[2])]]*size[0])
-        ngram_encoding = torch.cat([zero_pos, ngram_encoding], dim=2)
-        ngram_encoding = torch.cat([cls_pos, ngram_encoding], dim=1)
-
-    return ngram_encoding.type(torch.FloatTensor)
 
 
 class NGramTransformer(nn.Module):
@@ -81,7 +67,6 @@ class NGramTransformer(nn.Module):
         self.wd_emb = self.bert.embeddings.word_embeddings
 
     def forward(self, input_ids=None, ngram_encoding=None):
-
         embeds = torch.bmm(ngram_encoding, self.wd_emb(input_ids))
         embeds, cls_embeds  = self.bert(inputs_embeds=embeds)
         logits = self.out_layer(embeds[:,0,:])
@@ -100,7 +85,6 @@ class NGramTransformer_Attn(nn.Module):
         self.wd_emb = self.bert.embeddings.word_embeddings
         self.attn_layer = nn.Linear(self.hidden_size, self.class_size)
         self.out_layer = nn.Linear(self.hidden_size, 1)
-
 
     def forward(self, input_ids=None, ngram_encoding=None):
         embeds = torch.bmm(ngram_encoding, self.wd_emb(input_ids))
@@ -126,9 +110,7 @@ def eval(model, tokenizer, dev_loader, device, ngram_size):
     yhat_raw = []
 
     with torch.no_grad():
-
         for idx, (input_ids, ngram_encoding, labels) in enumerate(dev_loader):
-
             input_ids = input_ids.to(device)
             ngram_encoding = ngram_encoding.to(device)
             labels = labels.to(device)
@@ -165,7 +147,6 @@ def train(model_name, train_loader, device, ngram_size, num_epochs):
     criterion = torch.nn.BCEWithLogitsLoss()
     model.zero_grad()
 
-
     for i in range(num_epochs):
         total_loss = 0.
         num_examples = 0
@@ -188,8 +169,6 @@ def train(model_name, train_loader, device, ngram_size, num_epochs):
         print('Average train loss after epoch {} is {}.'.format(str(i+1),str(total_loss / num_examples)))
         eval(model, tokenizer, dev_loader, device, ngram_size)
         torch.save(model, 'model.pt')
-
-
 
 with open(join(path,'TOP_50_CODES.csv'),'r') as f:
     idx2code = [elem[:-1] for elem in f.readlines()]

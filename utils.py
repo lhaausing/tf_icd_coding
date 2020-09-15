@@ -22,6 +22,15 @@ def get_ngram_encoding(attn_mask = None, ngram_size = None, sep_cls = True):
         ngram_pos[i] = ngram_pos[i] + [-1]*(max_num_ngram+1-len(ngram_pos[i]))
     ngram_encoding = [torch.cat([((arange_t>=elem[i])*(arange_t<elem[i+1])).unsqueeze(0) for i in range(max_num_ngram)]).unsqueeze(0) for elem in ngram_pos]
     ngram_encoding = torch.cat(ngram_encoding)
+    
+    if sep_cls:
+        size = ngram_encoding.size()
+        zero_pos = torch.zeros(size[0],size[1],1,dtype=torch.bool)
+        cls_pos = torch.BoolTensor([[[1]+[0]*(size[2])]]*size[0])
+        ngram_encoding = torch.cat([zero_pos, ngram_encoding], dim=2)
+        ngram_encoding = torch.cat([cls_pos, ngram_encoding], dim=1)
+
+    return ngram_encoding.type(torch.FloatTensor)
 
 def early_stop(metrics_hist, criterion, patience):
     if not np.all(np.isnan(metrics_hist[criterion])):

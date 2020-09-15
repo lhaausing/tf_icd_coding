@@ -20,8 +20,8 @@ device = 'cuda:0'
 num_epochs = 50
 ngram_size = 32
 batch_size_train = 32
-batch_size_dev = 32
-batch_size_test = 32
+batch_size_dev = 8
+batch_size_test = 8
 path = '/scratch/xl3119/Multi-Filter-Residual-Convolutional-Neural-Network/data/mimic3'
 use_attention = False
 multi_gpu = True
@@ -46,7 +46,7 @@ class mimic3_dataset(Dataset):
         return [self.texts[key], self.idx[key], self.labels[key]]
 
     def mimic3_col_func(self, batch):
-        batch_inputs = tokenizer([elem[0] for elem in batch], return_tensors="pt", padding=True)
+        batch_inputs = self.tokenizer([elem[0] for elem in batch], return_tensors="pt", padding=True)
         input_ids = batch_inputs["input_ids"]
         ngram_encoding = get_ngram_encoding(attn_mask=batch_inputs['attention_mask'],
                                             ngram_size=self.ngram_size,
@@ -190,9 +190,9 @@ train_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample
 dev_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in dev_codes]
 test_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in test_codes]
 
-train_dataset = mimic3_dataset(train_texts, train_labels)
-dev_dataset = mimic3_dataset(dev_texts, dev_labels)
-test_dataset = mimic3_dataset(test_texts, test_labels)
+train_dataset = mimic3_dataset(train_texts, train_labels, tokenizer)
+dev_dataset = mimic3_dataset(dev_texts, dev_labels, tokenizer)
+test_dataset = mimic3_dataset(test_texts, test_labels, tokenizer)
 
 train_loader = DataLoader(dataset=train_dataset,
                           batch_size=batch_size_train,

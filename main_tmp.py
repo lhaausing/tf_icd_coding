@@ -13,27 +13,31 @@ from torch.utils.data import Dataset, DataLoader
 import transformers
 from transformers import AutoTokenizer, AutoModel
 
-from utils import all_metrics, print_metrics
+from utils import all_metrics, print_metrics, get_ngram_encoding
 
 model_name = 'bert-base-uncased'
 device = 'cuda:0'
 num_epochs = 50
-max_n_gram_len = 32
-batch_size_train = 8
-batch_size_dev = 8
-batch_size_test = 8
+ngram_size = 32
+batch_size_train = 32
+batch_size_dev = 32
+batch_size_test = 32
 path = '/scratch/xl3119/Multi-Filter-Residual-Convolutional-Neural-Network/data/mimic3'
-use_attention = True
+use_attention = False
 multi_gpu = True
 num_gpu = 3
 
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
 class mimic3_dataset(Dataset):
 
-    def __init__(self, texts, labels):
+    def __init__(self, texts, labels, tokenizer):
 
         self.texts = texts
         self.idx = list(range(len(labels)))
         self.labels = labels
+        self.tokenizer = tokenizer ##defined in first lines
+        self.ngram_size = ngram_size ##defined in first lines
         assert (len(self.texts) == len(self.labels))
 
     def __len__(self):
@@ -43,99 +47,74 @@ class mimic3_dataset(Dataset):
 
         return [self.texts[key], self.idx[key], self.labels[key]]
 
+    def mimic3_col_func(self, batch):
 
-def calculate_ngram_position_matrix(attn_mask = None, max_ngram_size = None, model_device = None, sep_cls = True):
+        batch_inputs = tokenizer([elem[0] for elem in batch], return_tensors="pt", padding=True)
 
-    for i, elem in enumerate([attn_mask, max_ngram_size, model_device]):
-        if elem is None:
-            raise NameError('You must give input in position {}'.format(i))
+        input_ids = batch_inputs["input_ids"]
+        attn_mask = batch_inputs['attention_mask']
 
-    if attn_mask.device != model_device:
-        attn_mask = attn_mask.to(model_device)
+        ngram_encoding = get_ngram_encoding(attn_mask=attn_mask, ngram_size=self.ngram_size, sep_cls=True)
 
-    batch_sent_lens = torch.sum(attn_mask,1)
-    if sep_cls:
-        batch_sent_lens -= 1
-    max_sent_len = torch.max(batch_sent_lens).item()
-    num_n_grams = [math.ceil(elem / max_ngram_size) for elem in batch_sent_lens.tolist()]
-    max_num_n_grams = max(num_n_grams)
-    arange_t = torch.arange(max_sent_len)
+        labels = torch.cat([elem[2] for elem in batch], dim = 0).type('torch.FloatTensor')
 
-    n_gram_pos = [[min(j * max_ngram_size, batch_sent_lens[i].item()) for j in range(elem+1)] for i, elem in enumerate(num_n_grams)]
-    for i in range(len(n_gram_pos)):
-        n_gram_pos[i] = n_gram_pos[i] + [-1]*(max_num_n_grams+1-len(n_gram_pos[i]))
-    n_gram_pos_matrix = [torch.cat([((arange_t>=elem[i])*(arange_t<elem[i+1])).unsqueeze(0) for i in range(max_num_n_grams)]).unsqueeze(0) for elem in n_gram_pos]
-    n_gram_pos_matrix = torch.cat(n_gram_pos_matrix).to(model_device)
+        return (input_ids, ngram_encoding, labels)
 
     if sep_cls:
-        size = n_gram_pos_matrix.size()
-        zero_pos = torch.zeros(size[0],size[1],1,dtype=torch.bool).to(model_device)
-        cls_pos = torch.BoolTensor([[[1]+[0]*(size[2])]]*size[0]).to(model_device)
-        n_gram_pos_matrix = torch.cat([zero_pos, n_gram_pos_matrix], dim=2)
-        n_gram_pos_matrix = torch.cat([cls_pos, n_gram_pos_matrix], dim=1)
+        size = ngram_encoding.size()
+        zero_pos = torch.zeros(size[0],size[1],1,dtype=torch.bool)
+        cls_pos = torch.BoolTensor([[[1]+[0]*(size[2])]]*size[0])
+        ngram_encoding = torch.cat([zero_pos, ngram_encoding], dim=2)
+        ngram_encoding = torch.cat([cls_pos, ngram_encoding], dim=1)
 
-    return n_gram_pos_matrix.type(torch.FloatTensor).to(model_device)
+    return ngram_encoding.type(torch.FloatTensor)
 
 
 class NGramTransformer(nn.Module):
 
-    def __init__(self, model_name='', max_n_gram_len = 32, n_class = 50,device= 'cuda:0'):
+    def __init__(self, model_name='', ngram_size = 32, n_class = 50):
         super().__init__()
-        if not model_name:
-            raise NameError('You have to give a model name from transformers library.')
-        self.transformers_model = AutoModel.from_pretrained(model_name)
-        self.out_layer = nn.Linear(self.transformers_model.config.hidden_size, n_class)
-        self.word_embeddings = self.transformers_model.embeddings.word_embeddings
-        self.max_n_gram_len = max_n_gram_len
-        self.device = device
+        self.ngram_size = ngram_size
+        self.bert = AutoModel.from_pretrained(model_name)
+        self.hidden_size = self.bert.config.hidden_size
+        self.out_layer = nn.Linear(self.hidden_size, n_class)
+        self.wd_emb = self.bert.embeddings.word_embeddings
 
-    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, position_ids=None, inputs_embeds=None):
-        embeds = self.word_embeddings(input_ids)
-        ngram_pos_matrix = calculate_ngram_position_matrix(attn_mask=attention_mask,
-                                                           max_ngram_size=self.max_n_gram_len,
-                                                           model_device=self.device)
+    def forward(self, input_ids=None, ngram_encoding=None):
 
-        embeds = torch.bmm(ngram_pos_matrix, embeds)
-        embeds, cls_embeds  = self.transformers_model(inputs_embeds=embeds)
-        logit = self.out_layer(embeds[:,0,:])
+        embeds = torch.bmm(ngram_encoding, self.wd_emb(input_ids))
+        embeds, cls_embeds  = self.bert(inputs_embeds=embeds)
+        logits = self.out_layer(embeds[:,0,:])
 
         return logit
 
 class NGramTransformer_Attn(nn.Module):
 
-    def __init__(self, model_name='', max_n_gram_len = 32, n_class = 50,device= 'cuda:0'):
+    def __init__(self, model_name='', ngram_size = 32, n_class = 50,device= 'cuda:0'):
         super().__init__()
-        if not model_name:
-            raise NameError('You have to give a model name from transformers library.')
-        self.transformers_model = AutoModel.from_pretrained(model_name)
-        self.hidden_size = self.transformers_model.config.hidden_size
+        self.bert = AutoModel.from_pretrained(model_name)
+        self.hidden_size = self.bert.config.hidden_size
         self.class_size = n_class
-        self.max_n_gram_len = max_n_gram_len
-        self.device = device
+        self.ngram_size = ngram_size
 
-        self.word_embeddings = self.transformers_model.embeddings.word_embeddings
+        self.wd_emb = self.bert.embeddings.word_embeddings
         self.attn_layer = nn.Linear(self.hidden_size, self.class_size)
         self.out_layer = nn.Linear(self.hidden_size, 1)
 
 
-    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, position_ids=None, inputs_embeds=None):
-        embeds = self.word_embeddings(input_ids)
-        ngram_pos_matrix = calculate_ngram_position_matrix(attn_mask=attention_mask,
-                                                           max_ngram_size=self.max_n_gram_len,
-                                                           model_device=self.device)
+    def forward(self, input_ids=None, ngram_encoding=None):
+        embeds = torch.bmm(ngram_encoding, self.wd_emb(input_ids))
+        embeds, cls_embeds  = self.bert(inputs_embeds=embeds)
 
-        embeds = torch.bmm(ngram_pos_matrix, embeds)
-        embeds, cls_embeds  = self.transformers_model(inputs_embeds=embeds)
-        #logit = self.out_layer(embeds[:,0,:])
         attn_weights = torch.transpose(self.attn_layer(embeds), 1, 2)
         attn_weights = F.softmax(attn_weights)
         attn_outputs = torch.bmm(attn_weights,embeds)
-        logit = self.out_layer(attn_outputs)
-        logit = logit.view(-1, self.class_size)
+        logits = self.out_layer(attn_outputs)
+        logits = logit.view(-1, self.class_size)
 
         return logit
 
-def eval(model, tokenizer, dev_loader, device, max_n_gram_len):
+def eval(model, tokenizer, dev_loader, device, ngram_size):
     model.eval()
     total_loss = 0.
     num_examples = 0
@@ -147,23 +126,21 @@ def eval(model, tokenizer, dev_loader, device, max_n_gram_len):
     yhat_raw = []
 
     with torch.no_grad():
-        for idx, (batch_texts, batch_ids, batch_labels) in enumerate(dev_loader):
 
-            batch_texts = list(batch_texts)
-            batch_inputs = tokenizer(batch_texts, return_tensors="pt", padding=True)
+        for idx, (input_ids, ngram_encoding, labels) in enumerate(dev_loader):
 
-            input_ids = batch_inputs['input_ids'].to(device)
-            attention_mask = batch_inputs['attention_mask'].to(device)
-            batch_labels = batch_labels.type('torch.FloatTensor').to(device)
+            input_ids = input_ids.to(device)
+            ngram_encoding = ngram_encoding.to(device)
+            labels = labels.to(device)
 
-            outputs = model(input_ids, attention_mask)
-            loss = criterion(outputs, batch_labels)
-            total_loss += loss.item() * outputs.size()[0]
-            num_examples += outputs.size()[0]
+            logits = model(input_ids, ngram_encoding)
+            loss = criterion(logits, labels)
+            total_loss += loss.item() * logits.size()[0]
+            num_examples += logits.size()[0]
 
-            y.append(batch_labels.cpu().detach().numpy())
-            yhat.append(np.round(torch.sigmoid(outputs).cpu().detach().numpy()))
-            yhat_raw.append(torch.sigmoid(outputs).cpu().detach().numpy())
+            y.append(labels.cpu().detach().numpy())
+            yhat.append(np.round(torch.sigmoid(logits).cpu().detach().numpy()))
+            yhat_raw.append(torch.sigmoid(logits).cpu().detach().numpy())
 
         y = np.concatenate(y, axis=0)
         yhat = np.concatenate(yhat, axis=0)
@@ -175,12 +152,11 @@ def eval(model, tokenizer, dev_loader, device, max_n_gram_len):
     print('Total eval loss after epoch is {}.'.format(str(total_loss / num_examples)))
 
 
-def train(model_name, train_loader, device, max_n_gram_len, num_epochs):
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+def train(model_name, train_loader, device, ngram_size, num_epochs):
     if use_attention:
-        model = NGramTransformer_Attn(model_name, max_n_gram_len).to(device)
+        model = NGramTransformer_Attn(model_name, ngram_size).to(device)
     else:
-        model = NGramTransformer(model_name, max_n_gram_len).to(device)
+        model = NGramTransformer(model_name, ngram_size).to(device)
 
     if multi_gpu:
         device_ids = [i for i in range(num_gpu)]
@@ -193,27 +169,24 @@ def train(model_name, train_loader, device, max_n_gram_len, num_epochs):
     for i in range(num_epochs):
         total_loss = 0.
         num_examples = 0
-        for idx, (batch_texts, batch_ids, batch_labels) in enumerate(train_loader):
+        for idx, (input_ids, ngram_encoding, labels) in enumerate(train_loader):
 
-            batch_texts = list(batch_texts)
-            batch_inputs = tokenizer(batch_texts, return_tensors="pt", padding=True)
-
-            input_ids = batch_inputs['input_ids'].to(device)
-            attention_mask = batch_inputs['attention_mask'].to(device)
-            batch_labels = batch_labels.type('torch.FloatTensor').to(device)
+            input_ids = input_ids.to(device)
+            ngram_encoding = ngram_encoding.to(device)
+            labels = labels.to(device)
 
             model.train()
-            outputs = model(input_ids, attention_mask)
-            loss = criterion(outputs, batch_labels)
+            logits = model(input_ids, ngram_encoding)
+            loss = criterion(logits, labels)
 
             loss.backward()
             optimizer.step()
             model.zero_grad()
-            total_loss += loss.item() * outputs.size()[0]
-            num_examples += outputs.size()[0]
+            total_loss += loss.item() * logits.size()[0]
+            num_examples += logits.size()[0]
 
         print('Average train loss after epoch {} is {}.'.format(str(i+1),str(total_loss / num_examples)))
-        eval(model, tokenizer, dev_loader, device, max_n_gram_len)
+        eval(model, tokenizer, dev_loader, device, ngram_size)
         torch.save(model, 'model.pt')
 
 
@@ -227,15 +200,15 @@ dev_df = pd.read_csv(join(path,'dev_50.csv'))
 test_df = pd.read_csv(join(path,'test_50.csv'))
 
 train_texts = [elem[6:-6] for elem in train_df['TEXT']]
-train_codes = [[code2idx[code] for code in elem.split(';')] for elem in train_df['LABELS']]
-train_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in train_codes]
-
 dev_texts = [elem[6:-6] for elem in dev_df['TEXT']]
-dev_codes = [[code2idx[code] for code in elem.split(';')] for elem in dev_df['LABELS']]
-dev_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in dev_codes]
-
 test_texts = [elem[6:-6] for elem in test_df['TEXT']]
+
+train_codes = [[code2idx[code] for code in elem.split(';')] for elem in train_df['LABELS']]
+dev_codes = [[code2idx[code] for code in elem.split(';')] for elem in dev_df['LABELS']]
 test_codes = [[code2idx[code] for code in elem.split(';')] for elem in test_df['LABELS']]
+
+train_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in train_codes]
+dev_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in dev_codes]
 test_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in test_codes]
 
 train_dataset = mimic3_dataset(train_texts, train_labels)
@@ -244,12 +217,15 @@ test_dataset = mimic3_dataset(test_texts, test_labels)
 
 train_loader = DataLoader(dataset=train_dataset,
                           batch_size=batch_size_train,
+                          collate_fn=train_dataset.mimic3_col_func,
                           shuffle=True)
 dev_loader = DataLoader(dataset=dev_dataset,
                         batch_size=batch_size_dev,
+                        collate_fn=dev_dataset.mimic3_col_func,
                         shuffle=True)
 test_loader = DataLoader(dataset=test_dataset,
                          batch_size=batch_size_test,
+                         collate_fn=test_dataset.mimic3_col_func,
                          shuffle=True)
 
-train(model_name, train_loader, device, max_n_gram_len, num_epochs)
+train(model_name, train_loader, device, ngram_size, num_epochs)

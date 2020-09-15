@@ -1,10 +1,27 @@
 import csv
 import json
+import math
 import torch
 import numpy as np
 from tqdm import tqdm
 from scipy.sparse import csr_matrix
 from sklearn.metrics import roc_curve, auc
+
+def get_ngram_encoding(attn_mask = None, ngram_size = None, sep_cls = True):
+
+    sent_lens = torch.sum(attn_mask,1)
+    if sep_cls:
+        sent_lens -= 1
+    max_sent_len = torch.max(sent_lens).item()
+    num_ngram = [math.ceil(elem / ngram_size) for elem in sent_lens.tolist()]
+    max_num_ngram = max(num_ngram)
+    arange_t = torch.arange(max_sent_len)
+
+    ngram_pos = [[min(j * ngram_size, sent_lens[i].item()) for j in range(elem+1)] for i, elem in enumerate(num_ngram)]
+    for i in range(len(ngram_pos)):
+        ngram_pos[i] = ngram_pos[i] + [-1]*(max_num_ngram+1-len(ngram_pos[i]))
+    ngram_encoding = [torch.cat([((arange_t>=elem[i])*(arange_t<elem[i+1])).unsqueeze(0) for i in range(max_num_ngram)]).unsqueeze(0) for elem in ngram_pos]
+    ngram_encoding = torch.cat(ngram_encoding)
 
 def early_stop(metrics_hist, criterion, patience):
     if not np.all(np.isnan(metrics_hist[criterion])):

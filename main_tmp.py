@@ -15,7 +15,7 @@ from transformers import AutoTokenizer, AutoModel
 
 from utils import all_metrics, print_metrics, get_ngram_encoding
 
-model_name = 'bert-base-uncased-dir'
+model_name = '../bert_base_uncased'
 device = 'cuda:0'
 num_epochs = 50
 ngram_size = 32

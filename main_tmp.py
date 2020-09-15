@@ -20,8 +20,8 @@ device = 'cuda:0'
 num_epochs = 50
 ngram_size = 32
 batch_size_train = 32
-batch_size_dev = 8
-batch_size_test = 8
+batch_size_dev = 32
+batch_size_test = 32
 path = '/scratch/xl3119/Multi-Filter-Residual-Convolutional-Neural-Network/data/mimic3'
 use_attention = False
 multi_gpu = True
@@ -51,7 +51,7 @@ class mimic3_dataset(Dataset):
         ngram_encoding = get_ngram_encoding(attn_mask=batch_inputs['attention_mask'],
                                             ngram_size=self.ngram_size,
                                             sep_cls=True)
-        labels = torch.cat([elem[2] for elem in batch], dim=0).type('torch.FloatTensor')
+        labels = torch.cat([elem[2].unsqueeze(0) for elem in batch], dim=0).type('torch.FloatTensor')
 
         return (input_ids, ngram_encoding, labels)
 

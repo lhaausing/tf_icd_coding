@@ -36,7 +36,7 @@ class Attn_Layer(nn.Module):
 
         return embeds
 
-class Attn_Out_Layer(object):
+class Attn_Out_Layer(nn.Module):
     """Calculate logits before applying sigmoid func."""
 
     def __init__(self, hidden_size, class_size):
@@ -88,4 +88,4 @@ class NGramTransformer_Attn(nn.Module):
         embeds = self.attn_layer(embeds)
         logits = self.out_layer(embeds)
 
-        return logit
+        return logits

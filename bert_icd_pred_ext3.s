@@ -9,7 +9,7 @@
 #SBATCH --job-name=bert_icd_pred
 #SBATCH --mail-type=END
 #SBATCH --mail-user=xl3119@nyu.edu
-#SBATCH --output=/scratch/xl3119/bert_icd_pred/result.txt
+#SBATCH --output=/scratch/xl3119/bert_icd_pred_env/result.txt
 
 overlay_ext3=/scratch/xl3119/bert_icd_pred_env/overlay-10GB-400K.ext3
 model_name=clinical_discharge_bert

@@ -9,9 +9,14 @@
 #SBATCH --job-name=bert_icd_pred
 #SBATCH --mail-type=END
 #SBATCH --mail-user=xl3119@nyu.edu
-#SBATCH --output=bert_icd_pred.txt
+#SBATCH --output=/scratch/xl3119/bert_icd_pred/result.txt
 
 overlay_ext3=/scratch/xl3119/bert_icd_pred_env/overlay-10GB-400K.ext3
+model_name=clinical_discharge_bert
+batch_size=32
+ngram_size=32
+n_gpu=3
+checkpt_path=/scratch/xl3119/bert_icd_pred_env/${model_name}_bs${batch_size}_ns${ngram_size}.pt
 
 singularity \
     exec --nv --overlay $overlay_ext3:ro \
@@ -21,4 +26,10 @@ singularity \
                   module load gcc/6.3.0; \
                   source /share/apps/anaconda3/5.3.1/etc/profile.d/conda.sh; \
                   conda activate /ext3/cenv; \
-                  python3 main_tmp.py "
+                  python3 main.py \
+                              --data_dir /scratch/xl3119/Multi-Filter-Residual-Convolutional-Neural-Network/data/mimic3 \
+                              --model_name ../${model_name} \
+                              --batch_size ${batch_size} \
+                              --ngram_size ${ngram_size} \
+                              --ngpu ${n_gpu} \
+                              --checkpt_path ${checkpt_path} "

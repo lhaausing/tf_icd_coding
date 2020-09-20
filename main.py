@@ -77,3 +77,6 @@ def main():
           args.attention,
           args.n_gpu,
           args.checkpt_path)
+
+if __name__ == '__main__':
+    main()

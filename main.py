@@ -51,7 +51,7 @@ def main():
                         type=int,
                         help="Size of the N-Gram that one's using.")
     parser.add_argument("--attention",
-                        action="store_true"
+                        action="store_true",
                         help="Whether plug in the attention layer after the Transformers LM.")
     parser.add_argument("--n_gpu",
                         default=1,

@@ -61,10 +61,12 @@ def main():
                         default="cuda:0",
                         type=str,
                         help="Normally this doesn't matter.")
-    args = parser_args("--checkpt_path",
+    parser.add_argument("--checkpt_path",
                         default="./model.pt",
                         type=str,
                         help="Saving dir of the final checkpoint.")
+
+    args = parser.parse_args()
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     train_loader, val_loader, test_loader = get_dataloader(args.data_dir, tokenizer)

@@ -45,6 +45,7 @@ class mimic3_dataset(Dataset):
 def get_dataloader(path, tokenizer):
     with open(join(path,'TOP_50_CODES.csv'),'r') as f:
         idx2code = [elem[:-1] for elem in f.readlines()]
+        f.close()
     code2idx = {elem:i for i, elem in enumerate(idx2code)}
 
     train_df = pd.read_csv(join(path,'train_50.csv'))

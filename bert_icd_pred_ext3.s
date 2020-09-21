@@ -31,5 +31,5 @@ singularity \
                               --model_name ../${model_name} \
                               --batch_size ${batch_size} \
                               --ngram_size ${ngram_size} \
-                              --ngpu ${n_gpu} \
+                              --n_gpu ${n_gpu} \
                               --checkpt_path ${checkpt_path} "

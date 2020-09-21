@@ -75,9 +75,9 @@ def main():
         f.close()
     code2idx = {elem:i for i, elem in enumerate(idx2code)}
 
-    train_df = pd.read_csv(join(args.data_dir,'train_50.csv'))
-    val_df = pd.read_csv(join(args.data_dir,'dev_50.csv'))
-    test_df = pd.read_csv(join(args.data_dir,'test_50.csv'))
+    train_df = pd.read_csv(join(args.data_dir,'train_50.csv'),engine='python')
+    val_df = pd.read_csv(join(args.data_dir,'dev_50.csv'),engine='python')
+    test_df = pd.read_csv(join(args.data_dir,'test_50.csv'),engine='python')
 
     train_texts = [elem[6:-6] for elem in train_df['TEXT']]
     val_texts = [elem[6:-6] for elem in val_df['TEXT']]

@@ -70,14 +70,14 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
 
-    with open(join(arg.data_dir,'TOP_50_CODES.csv'),'r') as f:
+    with open(join(args.data_dir,'TOP_50_CODES.csv'),'r') as f:
         idx2code = [elem[:-1] for elem in f.readlines()]
         f.close()
     code2idx = {elem:i for i, elem in enumerate(idx2code)}
 
-    train_df = pd.read_csv(join(arg.data_dir,'train_50.csv'))
-    val_df = pd.read_csv(join(arg.data_dir,'dev_50.csv'))
-    test_df = pd.read_csv(join(arg.data_dir,'test_50.csv'))
+    train_df = pd.read_csv(join(args.data_dir,'train_50.csv'))
+    val_df = pd.read_csv(join(args.data_dir,'dev_50.csv'))
+    test_df = pd.read_csv(join(args.data_dir,'test_50.csv'))
 
     train_texts = [elem[6:-6] for elem in train_df['TEXT']]
     val_texts = [elem[6:-6] for elem in val_df['TEXT']]

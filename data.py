@@ -16,6 +16,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
+from utils import *
+
 class mimic3_dataset(Dataset):
 
     def __init__(self, texts, labels, ngram_size, tokenizer):

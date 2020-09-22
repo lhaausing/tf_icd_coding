@@ -70,18 +70,20 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
 
-    with open(join(args.data_dir,'TOP_50_CODES.csv'),'r') as f:
-        idx2code = [elem[:-1] for elem in f.readlines()]
-        f.close()
-    code2idx = {elem:i for i, elem in enumerate(idx2code)}
-
     train_df = pd.read_csv(join(args.data_dir,'train_50.csv'),engine='python')
     val_df = pd.read_csv(join(args.data_dir,'dev_50.csv'),engine='python')
     test_df = pd.read_csv(join(args.data_dir,'test_50.csv'),engine='python')
 
+    #load text
     train_texts = [elem[6:-6] for elem in train_df['TEXT']]
     val_texts = [elem[6:-6] for elem in val_df['TEXT']]
     test_texts = [elem[6:-6] for elem in test_df['TEXT']]
+
+    #load and transform labels
+    with open(join(args.data_dir,'TOP_50_CODES.csv'),'r') as f:
+        idx2code = [elem[:-1] for elem in f.readlines()]
+        f.close()
+    code2idx = {elem:i for i, elem in enumerate(idx2code)}
 
     train_codes = [[code2idx[code] for code in elem.split(';')] for elem in train_df['LABELS']]
     val_codes = [[code2idx[code] for code in elem.split(';')] for elem in val_df['LABELS']]
@@ -91,6 +93,7 @@ def main():
     val_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in val_codes]
     test_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in test_codes]
 
+    #build dataset and dataloader
     train_dataset = mimic3_dataset(train_texts, train_labels, args.ngram_size, tokenizer)
     val_dataset = mimic3_dataset(val_texts, val_labels, args.ngram_size, tokenizer)
     test_dataset = mimic3_dataset(test_texts, test_labels, args.ngram_size, tokenizer)
@@ -108,6 +111,7 @@ def main():
                              collate_fn=test_dataset.mimic3_col_func,
                              shuffle=True)
 
+    #train
     train(args.model_name,
           train_loader,
           val_loader,

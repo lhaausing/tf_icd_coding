@@ -96,15 +96,15 @@ def main():
     test_dataset = mimic3_dataset(test_texts, test_labels, args.ngram_size, tokenizer)
 
     train_loader = DataLoader(dataset=train_dataset,
-                              batch_size=batch_size_train,
+                              batch_size=args.batch_size,
                               collate_fn=train_dataset.mimic3_col_func,
                               shuffle=True)
     val_loader = DataLoader(dataset=val_dataset,
-                            batch_size=batch_size_dev,
+                            batch_size=args.batch_size,
                             collate_fn=val_dataset.mimic3_col_func,
                             shuffle=True)
     test_loader = DataLoader(dataset=test_dataset,
-                             batch_size=batch_size_test,
+                             batch_size=args.batch_size,
                              collate_fn=test_dataset.mimic3_col_func,
                              shuffle=True)
 

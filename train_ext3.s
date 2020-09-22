@@ -1,12 +1,5 @@
 #!/bin/bash
 
-overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
-model_name=clinical_discharge_bert
-batch_size=32
-ngram_size=32
-n_gpu=3
-checkpt_path= ../${model_name}_bs${batch_size}_ns${ngram_size}.pt
-
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=3
 #SBATCH --cpus-per-task=1
@@ -16,7 +9,14 @@ checkpt_path= ../${model_name}_bs${batch_size}_ns${ngram_size}.pt
 #SBATCH --job-name=bert_icd_pred
 #SBATCH --mail-type=END
 #SBATCH --mail-user=xl3119@nyu.edu
-#SBATCH --output=../${model_name}_bs${batch_size}_ns${ngram_size}.log
+#SBATCH --output=/scratch/xl3119/tf_icd/clinical_bert_bs32_ns32.log
+
+overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
+model_name=clinical_discharge_bert
+batch_size=32
+ngram_size=32
+n_gpu=3
+checkpt_path= ../${model_name}_bs${batch_size}_ns${ngram_size}.pt
 
 singularity \
     exec --nv --overlay $overlay_ext3:ro \

@@ -116,6 +116,7 @@ def main():
     train(args.model_name,
           train_loader,
           val_loader,
+          tokenizer,
           args.device,
           args.ngram_size,
           args.n_epochs,

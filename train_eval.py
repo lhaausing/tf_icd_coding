@@ -60,7 +60,7 @@ def eval(model, tokenizer, val_loader, device, ngram_size):
 
     print('Total eval loss after epoch is {}.'.format(str(total_loss / num_examples)))
 
-def train(model_name, train_loader, val_loader, device, ngram_size, n_epochs, attn, n_gpu, checkpt_path):
+def train(model_name, train_loader, val_loader, tokenizer, device, ngram_size, n_epochs, attn, n_gpu, checkpt_path):
 
     # Define model, parallel training, optimizer.
     if attn:

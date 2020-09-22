@@ -65,11 +65,12 @@ def main():
                         default="./model.pt",
                         type=str,
                         help="Saving dir of the final checkpoint.")
-
     args = parser.parse_args()
 
+    #define tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
 
+    #load csv file
     train_df = pd.read_csv(join(args.data_dir,'train_50.csv'),engine='python')
     val_df = pd.read_csv(join(args.data_dir,'dev_50.csv'),engine='python')
     test_df = pd.read_csv(join(args.data_dir,'test_50.csv'),engine='python')

@@ -60,7 +60,7 @@ def eval(model, tokenizer, val_loader, device, ngram_size):
 
     print('Total eval loss after epoch is {}.'.format(str(total_loss / num_examples)))
 
-def train(model_name, train_loader, val_loader, tokenizer, device, ngram_size, n_epochs, attn, n_gpu, checkpt_path):
+def train(model_name, train_loader, val_loader, tokenizer, device, ngram_size, n_epochs, attn, lr, eps, n_gpu, checkpt_path):
 
     # Define model, parallel training, optimizer.
     if attn:
@@ -71,7 +71,7 @@ def train(model_name, train_loader, val_loader, tokenizer, device, ngram_size, n
     if n_gpu > 1:
         device_ids = [_ for _ in range(n_gpu)]
         model = torch.nn.DataParallel(model, device_ids=device_ids)
-    optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=2e-05, eps=1e-08)
+    optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=float(lr), eps=float(eps))
     criterion = torch.nn.BCEWithLogitsLoss()
     model.zero_grad()
 

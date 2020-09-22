@@ -57,6 +57,14 @@ def main():
                         default=1,
                         type=int,
                         help="Suggested to train on multiple gpus if batch size > 8 and n-gram size < 32.")
+    parser.add_argument("--lr",
+                        default="2e-5",
+                        type=str,
+                        help="Learning Rate.")
+    parser.add_argument("--eps",
+                        default="1e-8",
+                        type=str,
+                        help="Epsilon.")
     parser.add_argument("--device",
                         default="cuda:0",
                         type=str,
@@ -121,6 +129,8 @@ def main():
           args.ngram_size,
           args.n_epochs,
           args.attention,
+          args.lr,
+          args.eps,
           args.n_gpu,
           args.checkpt_path)
 

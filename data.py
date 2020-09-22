@@ -18,7 +18,7 @@ from torch.utils.data import Dataset, DataLoader
 
 class mimic3_dataset(Dataset):
 
-    def __init__(self, texts, labels, tokenizer):
+    def __init__(self, texts, labels, ngram_size, tokenizer):
         self.texts = texts
         self.idx = list(range(len(labels)))
         self.labels = labels

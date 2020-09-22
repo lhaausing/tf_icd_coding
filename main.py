@@ -91,9 +91,9 @@ def main():
     val_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in val_codes]
     test_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in test_codes]
 
-    train_dataset = mimic3_dataset(train_texts, train_labels, tokenizer)
-    val_dataset = mimic3_dataset(val_texts, val_labels, tokenizer)
-    test_dataset = mimic3_dataset(test_texts, test_labels, tokenizer)
+    train_dataset = mimic3_dataset(train_texts, train_labels, args.ngram_size, tokenizer)
+    val_dataset = mimic3_dataset(val_texts, val_labels, args.ngram_size, tokenizer)
+    test_dataset = mimic3_dataset(test_texts, test_labels, args.ngram_size, tokenizer)
 
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=batch_size_train,

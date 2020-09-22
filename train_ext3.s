@@ -16,7 +16,7 @@ model_name=clinical_discharge_bert
 batch_size=32
 ngram_size=32
 n_gpu=3
-checkpt_path= ../${model_name}_bs${batch_size}_ns${ngram_size}.pt
+checkpt_path=../${model_name}_bs${batch_size}_ns${ngram_size}.pt
 
 singularity \
     exec --nv --overlay $overlay_ext3:ro \

@@ -24,8 +24,8 @@ class Attn_Layer(nn.Module):
     def __init__(self, hid, class_size):
         super().__init__()
         self.hid = hid
-        self.class_size = class_size
-        self.w = nn.Linear(self.hid, self.class_size)
+        self.c = class_size
+        self.w = nn.Linear(self.hid, self.c)
 
     def forward(self, input_embeds):
         attn_w = self.w(input_embeds)
@@ -42,14 +42,12 @@ class Attn_Out_Layer(nn.Module):
     def __init__(self, hid, class_size):
         super().__init__()
         self.hid = hid
-        self.class_size = class_size
+        self.c = class_size
         self.out_w = nn.Linear(self.hid, 1)
 
     def forward(self, input_embeds):
-        print(input_embeds.size())
         logits = self.out_w(input_embeds)
-        print(logits.size())
-        logits = logits.view(-1, self.class_size)
+        logits = logits.view(-1, self.c)
 
         return logits
 
@@ -78,12 +76,12 @@ class NGramTransformer_Attn(nn.Module):
         self.model_name = model_name
         self.bert = AutoModel.from_pretrained(model_name)
         self.hid = self.bert.config.hidden_size
-        self.class_size = n_class
+        self.c = n_class
         self.ngram_size = ngram_size
 
         self.wd_emb = self.bert.embeddings.word_embeddings
-        self.attn_layer = Attn_Layer(self.hid, self.class_size)
-        self.out_layer = Attn_Out_Layer(self.hid, self.class_size)
+        self.attn_layer = Attn_Layer(self.hid, self.c)
+        self.out_layer = Attn_Out_Layer(self.hid, self.c)
 
     def forward(self, input_ids=None, ngram_encoding=None):
         embeds = torch.bmm(ngram_encoding, self.wd_emb(input_ids))
@@ -111,8 +109,11 @@ class cnn_bert(nn.Module):
         self.wd_emb = self.bert.embeddings.word_embeddings
         self.conv = nn.Conv1d(self.hid, self.hid, self.ngram_size)
         self.maxpool = nn.MaxPool1d(self.mp_size)
-        self.attn = Attn_Layer(self.hid, self.c)
-        self.out = Attn_Out_Layer(self.hid, self.c)
+        if self.use_attn:
+            self.attn = Attn_Layer(self.hid, self.c)
+            self.out = Attn_Out_Layer(self.hid, self.c)
+        else:
+            self.out = nn.Linear(self.hid, self.c)
 
     def forward(self, input_ids=None):
         x = self.wd_emb(input_ids)

@@ -112,7 +112,7 @@ class cnn_bert(nn.Module):
         x = self.wd_emb(input_ids)
         x = self.conv_layer(x.permute(0,2,1))
         x = self.max_pool(x)
-        x, x_cls  = self.bert(inputs_embeds=embeds)
+        x, x_cls  = self.bert(inputs_embeds=x.permute(0,2,1))
         if self.use_attn:
             x = self.attn(x)
             logits = self.out(x)

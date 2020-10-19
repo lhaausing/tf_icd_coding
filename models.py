@@ -94,17 +94,21 @@ class NGramTransformer_Attn(nn.Module):
 class cnn_bert(nn.Module):
     def __init__(self, model_name='', ngram_size = 16, mp_size = 32, n_class = 50, device= 'cuda:0', use_attn = False):
         super().__init__()
-        self.model_name = model_name
+        #Transformers Encoder
         self.bert = AutoModel.from_pretrained(model_name)
+
+        #some_names
+        self.model_name = model_name
         self.hid = self.bert.config.hidden_size
         self.c = n_class
         self.ngram_size = ngram_size
         self.mp_size = mp_size
         self.use_attn = use_attn
 
+        #layers
         self.wd_emb = self.bert.embeddings.word_embeddings
         self.conv = nn.Conv1d(self.hid, self.hid, self.ngram_size)
-        self.maxpool = nn.Conv1d(self.mp_size)
+        self.maxpool = nn.MaxPool1d(self.mp_size)
         self.attn = Attn_Layer(self.hid, self.c)
         self.out = Attn_Out_Layer(self.hid, self.c)
 

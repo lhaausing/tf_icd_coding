@@ -14,10 +14,10 @@
 overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
 model_name=bert_base
 batch_size=32
-ngram_size=16
+ngram_size=32
 maxpool_size=32
 n_gpu=3
-n_epochs=30
+n_epochs=20
 checkpt_path=../cnn_${model_name}_bs${batch_size}_ns${ngram_size}_mp${maxpool_size}_sepcls.pt
 
 singularity \

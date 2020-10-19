@@ -47,7 +47,7 @@ class Attn_Out_Layer(nn.Module):
 
     def forward(self, input_embeds):
         logits = self.out_w(input_embeds)
-        logits = logit.view(-1, self.class_size)
+        logits = logits.view(-1, self.class_size)
 
         return logits
 

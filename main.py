@@ -86,10 +86,7 @@ def main():
     args = parser.parse_args()
 
     #define tokenizer
-    if "longformer" in args.model_name:
-        tokenizer = AutoTokenizer.from_pretrained("allenai/longformer-base-4096")
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
 
     #load csv file
     train_df = pd.read_csv(join(args.data_dir,'train_50.csv'),engine='python')

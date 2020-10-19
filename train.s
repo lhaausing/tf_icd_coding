@@ -14,7 +14,8 @@
 overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
 model_name=clinical_discharge_bert
 batch_size=32
-ngram_size=32
+ngram_size=16
+maxpool_size=32
 n_gpu=3
 checkpt_path=../cnn_${model_name}_bs${batch_size}_ns${ngram_size}.pt
 
@@ -31,5 +32,6 @@ singularity \
                               --model_name ../${model_name} \
                               --batch_size ${batch_size} \
                               --ngram_size ${ngram_size} \
+                              --maxpool_size ${maxpool_size} \
                               --n_gpu ${n_gpu} \
                               --checkpt_path ${checkpt_path} "

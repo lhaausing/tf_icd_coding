@@ -23,7 +23,7 @@ from data import *
 from utils import *
 from models import *
 
-def eval(model, tokenizer, val_loader, device, ngram_size):
+def eval(model, tokenizer, val_loader, device, ngram_size, use_ngram):
     model.eval()
     total_loss = 0.
     num_examples = 0
@@ -38,11 +38,15 @@ def eval(model, tokenizer, val_loader, device, ngram_size):
 
             # Assign inputs and labels to device
             input_ids = input_ids.to(device)
-            ngram_encoding = ngram_encoding.to(device)
+            if use_ngram:
+                ngram_encoding = ngram_encoding.to(device)
             labels = labels.to(device)
 
             # Evaluate and get results
-            logits = model(input_ids, ngram_encoding)
+            if use_ngram:
+                logits = model(input_ids, ngram_encoding)
+            else:
+                logits = model(input_ids)
             loss = criterion(logits, labels)
             total_loss += loss.item() * logits.size()[0]
             num_examples += logits.size()[0]
@@ -60,10 +64,12 @@ def eval(model, tokenizer, val_loader, device, ngram_size):
 
     print('Total eval loss after epoch is {}.'.format(str(total_loss / num_examples)))
 
-def train(model_name, train_loader, val_loader, tokenizer, device, ngram_size, n_epochs, attn, lr, eps, n_gpu, checkpt_path):
+def train(model_name, train_loader, val_loader, tokenizer, device, ngram_size, maxpool_size, use_ngram, n_epochs, attn, lr, eps, n_gpu, checkpt_path):
 
     # Define model, parallel training, optimizer.
-    if attn:
+    if not use_ngram:
+        model = cnn_bert(model_name, ngram_size, maxpool_size).to(device)
+    elif attn:
         model = NGramTransformer_Attn(model_name, ngram_size).to(device)
     else:
         model = NGramTransformer(model_name, ngram_size).to(device)
@@ -82,11 +88,15 @@ def train(model_name, train_loader, val_loader, tokenizer, device, ngram_size, n
         for idx, (input_ids, ngram_encoding, labels) in enumerate(train_loader):
 
             input_ids = input_ids.to(device)
-            ngram_encoding = ngram_encoding.to(device)
+            if use_ngram:
+                ngram_encoding = ngram_encoding.to(device)
             labels = labels.to(device)
 
             model.train()
-            logits = model(input_ids, ngram_encoding)
+            if use_ngram:
+                logits = model(input_ids, ngram_encoding)
+            else:
+                logits = model(input_ids)
             loss = criterion(logits, labels)
 
             loss.backward()

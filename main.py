@@ -50,9 +50,16 @@ def main():
                         default=32,
                         type=int,
                         help="Size of the N-Gram that one's using.")
+    parser.add_argument("--maxpool_size",
+                        default=32,
+                        type=int,
+                        help="Size of the Max-pooling. Probably need to be larger than 28.")
     parser.add_argument("--attention",
                         action="store_true",
                         help="Whether plug in the attention layer after the Transformers LM.")
+    parser.add_argument("--use_ngram",
+                        action="store_true",
+                        help="Whether use ngram_embeddings.")
     parser.add_argument("--n_gpu",
                         default=1,
                         type=int,
@@ -103,9 +110,9 @@ def main():
     test_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in test_codes]
 
     #build dataset and dataloader
-    train_dataset = mimic3_dataset(train_texts, train_labels, args.ngram_size, tokenizer)
-    val_dataset = mimic3_dataset(val_texts, val_labels, args.ngram_size, tokenizer)
-    test_dataset = mimic3_dataset(test_texts, test_labels, args.ngram_size, tokenizer)
+    train_dataset = mimic3_dataset(train_texts, train_labels, args.ngram_size, tokenizer, args.use_ngram)
+    val_dataset = mimic3_dataset(val_texts, val_labels, args.ngram_size, tokenizer, args.use_ngram)
+    test_dataset = mimic3_dataset(test_texts, test_labels, args.ngram_size, tokenizer, args.use_ngram)
 
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=args.batch_size,
@@ -127,6 +134,8 @@ def main():
           tokenizer,
           args.device,
           args.ngram_size,
+          args.maxpool_size,
+          args.use_ngram,
           args.n_epochs,
           args.attention,
           args.lr,

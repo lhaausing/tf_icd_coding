@@ -17,7 +17,7 @@ batch_size=32
 ngram_size=16
 maxpool_size=32
 n_gpu=3
-n_epochs=15
+n_epochs=30
 checkpt_path=../cnn_${model_name}_bs${batch_size}_ns${ngram_size}_mp${maxpool_size}.pt
 
 singularity \

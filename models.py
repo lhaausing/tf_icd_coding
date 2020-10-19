@@ -92,7 +92,7 @@ class NGramTransformer_Attn(nn.Module):
         return logits
 
 class cnn_bert(nn.Module):
-    def __init__(self, model_name='', ngram_size = 16, mp_size = 32, n_class = 50, device= 'cuda:0', use_attn = False):
+    def __init__(self, model_name='', ngram_size = 16, mp_size = 32, n_class = 50, device= 'cuda:0', sep_cls = True, use_attn = False):
         super().__init__()
         #Transformers Encoder
         self.bert = AutoModel.from_pretrained(model_name)
@@ -104,6 +104,7 @@ class cnn_bert(nn.Module):
         self.ngram_size = ngram_size
         self.mp_size = mp_size
         self.use_attn = use_attn
+        self.sep_cls = sep_cls
 
         #layers
         self.wd_emb = self.bert.embeddings.word_embeddings
@@ -117,7 +118,13 @@ class cnn_bert(nn.Module):
 
     def forward(self, input_ids=None):
         x = self.wd_emb(input_ids)
-        x = self.conv(x.permute(0,2,1))
+        x = x.permute(0,2,1)
+        if self.sep_cls:
+            x_cls, x = x[:,:,0], x[:,:,1:]
+            x = self.conv(x)
+            x = torch.cat((x_cls.unsqueeze(2),x),2)
+        else:
+            x = self.conv(x)
         x = self.maxpool(x)
         x, x_cls  = self.bert(inputs_embeds=x.permute(0,2,1))
         if self.use_attn:

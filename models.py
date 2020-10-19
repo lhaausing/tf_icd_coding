@@ -121,6 +121,6 @@ class cnn_bert(nn.Module):
             x = self.attn(x)
             logits = self.out(x)
         else:
-            logits = self.out_layer(x[:,0,:])
+            logits = self.out(x[:,0,:])
 
         return logits

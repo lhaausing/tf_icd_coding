@@ -12,7 +12,7 @@
 #SBATCH --output=/scratch/xl3119/tf_icd/clinical_bert_bs32_ns16_mp32.log
 
 overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
-model_name=clinical_discharge_bert
+model_name=bert_base
 batch_size=32
 ngram_size=16
 maxpool_size=32

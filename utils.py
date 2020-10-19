@@ -22,7 +22,7 @@ def get_ngram_encoding(attn_mask = None, ngram_size = None, sep_cls = True):
         ngram_pos[i] = ngram_pos[i] + [-1]*(max_num_ngram+1-len(ngram_pos[i]))
     ngram_encoding = [torch.cat([((arange_t>=elem[i])*(arange_t<elem[i+1])).unsqueeze(0) for i in range(max_num_ngram)]).unsqueeze(0) for elem in ngram_pos]
     ngram_encoding = torch.cat(ngram_encoding)
-    
+
     if sep_cls:
         size = ngram_encoding.size()
         zero_pos = torch.zeros(size[0],size[1],1,dtype=torch.bool)

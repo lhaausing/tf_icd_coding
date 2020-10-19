@@ -60,6 +60,9 @@ def main():
     parser.add_argument("--use_ngram",
                         action="store_true",
                         help="Whether use ngram_embeddings.")
+    parser.add_argument("--sep_cls",
+                        action="store_true",
+                        help="Whether seperate the cls token from convolution/ngram.")
     parser.add_argument("--n_gpu",
                         default=1,
                         type=int,
@@ -135,6 +138,7 @@ def main():
           args.device,
           args.ngram_size,
           args.maxpool_size,
+          args.sep_cls,
           args.use_ngram,
           args.n_epochs,
           args.attention,

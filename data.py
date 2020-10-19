@@ -20,13 +20,14 @@ from utils import *
 
 class mimic3_dataset(Dataset):
 
-    def __init__(self, texts, labels, ngram_size, tokenizer, use_ngram = False):
+    def __init__(self, texts, labels, ngram_size, tokenizer, use_ngram = False, sep_cls = True):
         self.texts = texts
         self.idx = list(range(len(labels)))
         self.labels = labels
         self.tokenizer = tokenizer
         self.ngram_size = ngram_size
         self.use_ngram = use_ngram
+        self.sep_cls = sep_cls
         assert (len(self.texts) == len(self.labels))
 
     def __len__(self):
@@ -41,7 +42,7 @@ class mimic3_dataset(Dataset):
         if self.use_ngram:
             ngram_encoding = get_ngram_encoding(attn_mask=batch_inputs['attention_mask'],
                                                 ngram_size=self.ngram_size,
-                                                sep_cls=True)
+                                                sep_cls=self.sep_cls)
         else:
             ngram_encoding = None
         labels = torch.cat([elem[2].unsqueeze(0) for elem in batch], dim=0).type('torch.FloatTensor')

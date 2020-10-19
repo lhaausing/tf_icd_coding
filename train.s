@@ -35,5 +35,6 @@ singularity \
                               --batch_size ${batch_size} \
                               --ngram_size ${ngram_size} \
                               --maxpool_size ${maxpool_size} \
+                              --sep_cls \
                               --n_gpu ${n_gpu} \
                               --checkpt_path ${checkpt_path} "

@@ -114,8 +114,8 @@ class cnn_bert(nn.Module):
 
     def forward(self, input_ids=None):
         x = self.wd_emb(input_ids)
-        x = self.conv_layer(x.permute(0,2,1))
-        x = self.max_pool(x)
+        x = self.conv(x.permute(0,2,1))
+        x = self.maxpool(x)
         x, x_cls  = self.bert(inputs_embeds=x.permute(0,2,1))
         if self.use_attn:
             x = self.attn(x)

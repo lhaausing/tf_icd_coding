@@ -12,13 +12,13 @@
 #SBATCH --output=/scratch/xl3119/tf_icd/clinical_bert_bs32_ns16_mp32_sepcls.log
 
 overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
-model_name=longformer_base
+model_name=bert_base
 batch_size=32
 ngram_size=32
 maxpool_size=32
 n_gpu=3
 n_epochs=20
-checkpt_path=../cnn_${model_name}_bs${batch_size}_ns${ngram_size}_mp${maxpool_size}_sepcls.pt
+checkpt_path=../cnn_${model_name}_bs${batch_size}_ns${ngram_size}_mp${maxpool_size}_sepcls_invw.pt
 
 singularity \
     exec --nv --overlay $overlay_ext3:ro \
@@ -35,6 +35,8 @@ singularity \
                               --batch_size ${batch_size} \
                               --ngram_size ${ngram_size} \
                               --maxpool_size ${maxpool_size} \
+                              --use_ngram \
                               --sep_cls \
+                              --inv_w \
                               --n_gpu ${n_gpu} \
                               --checkpt_path ${checkpt_path} "

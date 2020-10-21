@@ -23,7 +23,7 @@ from data import *
 from utils import *
 from models import *
 
-def eval(model, tokenizer, val_loader, device, ngram_size, use_ngram):
+def eval(model, tokenizer, val_loader, inv_w, device, ngram_size, use_ngram):
     model.eval()
     total_loss = 0.
     num_examples = 0
@@ -64,7 +64,7 @@ def eval(model, tokenizer, val_loader, device, ngram_size, use_ngram):
 
     print('Total eval loss after epoch is {}.'.format(str(total_loss / num_examples)))
 
-def train(model_name, train_loader, val_loader, tokenizer, device, ngram_size, maxpool_size, sep_cls, use_ngram, n_epochs, attn, lr, eps, n_gpu, checkpt_path):
+def train(model_name, train_loader, val_loader, inv_w, tokenizer, device, ngram_size, maxpool_size, sep_cls, use_ngram, n_epochs, attn, lr, eps, n_gpu, checkpt_path):
 
     # Define model, parallel training, optimizer.
     if not use_ngram:
@@ -78,7 +78,10 @@ def train(model_name, train_loader, val_loader, tokenizer, device, ngram_size, m
         device_ids = [_ for _ in range(n_gpu)]
         model = torch.nn.DataParallel(model, device_ids=device_ids)
     optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=float(lr), eps=float(eps))
-    criterion = torch.nn.BCEWithLogitsLoss()
+    if inv_w:
+        criterion = torch.nn.BCEWithLogitsLoss(pos_weight=inv_w)
+    else:
+        criterion = torch.nn.BCEWithLogitsLoss()
     model.zero_grad()
 
     #Train
@@ -106,5 +109,5 @@ def train(model_name, train_loader, val_loader, tokenizer, device, ngram_size, m
             num_examples += logits.size()[0]
 
         print('Average train loss after epoch {} is {}.'.format(str(i+1),str(total_loss / num_examples)))
-        eval(model, tokenizer, val_loader, device, ngram_size, use_ngram)
+        eval(model, tokenizer, val_loader, inv_w, device, ngram_size, use_ngram)
         torch.save(model, checkpt_path)

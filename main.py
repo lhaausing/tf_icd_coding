@@ -2,6 +2,7 @@
 
 import os
 import glob
+import pickle
 import logging
 import argparse
 from os.path import join
@@ -63,6 +64,9 @@ def main():
     parser.add_argument("--sep_cls",
                         action="store_true",
                         help="Whether seperate the cls token from convolution/ngram.")
+    parser.add_argument("--inv_w",
+                        action="store_true",
+                        help="Whether use inversed weights.")
     parser.add_argument("--n_gpu",
                         default=1,
                         type=int,
@@ -112,6 +116,12 @@ def main():
     val_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in val_codes]
     test_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in test_codes]
 
+    if args.inv_w:
+        label_freqs = pickle.load(open(join(args.data_dir, 'train_label_counter.pkl'), 'rb'))
+        inv_w = torch.LongTensor([label_freqs[elem] for elem in idx2code])
+        inv_w = torch.true_divide(inv_w, torch.sum(inv_w))
+        inv_w = torch.true_divide(torch.ones(list(freq_w.size())[0]), inv_w)
+
     #build dataset and dataloader
     train_dataset = mimic3_dataset(train_texts, train_labels, args.ngram_size, tokenizer, args.use_ngram, args.sep_cls)
     val_dataset = mimic3_dataset(val_texts, val_labels, args.ngram_size, tokenizer, args.use_ngram, args.sep_cls)
@@ -135,6 +145,7 @@ def main():
           train_loader,
           val_loader,
           tokenizer,
+          inv,
           args.device,
           args.ngram_size,
           args.maxpool_size,

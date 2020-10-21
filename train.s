@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=3
 #SBATCH --cpus-per-task=1
-#SBATCH --gres=gpu:3
+#SBATCH --gres=gpu:p40:3
 #SBATCH --time=24:00:00
 #SBATCH --mem=32GB
 #SBATCH --job-name=bert_icd_pred

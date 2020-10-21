@@ -120,7 +120,7 @@ def main():
         label_freqs = pickle.load(open(join(args.data_dir, 'train_label_counter.pkl'), 'rb'))
         inv_w = torch.LongTensor([label_freqs[elem] for elem in idx2code])
         inv_w = torch.true_divide(inv_w, torch.sum(inv_w))
-        inv_w = torch.true_divide(torch.ones(list(freq_w.size())[0]), inv_w)
+        inv_w = torch.true_divide(torch.ones(list(inv_w.size())[0]), inv_w)
 
     #build dataset and dataloader
     train_dataset = mimic3_dataset(train_texts, train_labels, args.ngram_size, tokenizer, args.use_ngram, args.sep_cls)

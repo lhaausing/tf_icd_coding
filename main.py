@@ -145,7 +145,7 @@ def main():
           train_loader,
           val_loader,
           tokenizer,
-          inv,
+          inv_w,
           args.device,
           args.ngram_size,
           args.maxpool_size,

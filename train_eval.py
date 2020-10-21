@@ -79,7 +79,7 @@ def train(model_name, train_loader, val_loader, inv_w, tokenizer, device, ngram_
         model = torch.nn.DataParallel(model, device_ids=device_ids)
     optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=float(lr), eps=float(eps))
     if inv_w != None:
-        criterion = torch.nn.BCEWithLogitsLoss(pos_weight=inv_w)
+        criterion = torch.nn.BCEWithLogitsLoss(pos_weight=inv_w.to(device))
     else:
         criterion = torch.nn.BCEWithLogitsLoss()
     model.zero_grad()

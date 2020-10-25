@@ -162,7 +162,7 @@ class local_bert(nn.Module):
         input_windows = []
         while accumul_pos < (b_max_len - self.max_len):
             input_windows.append((accumul_pos, accumul_pos + self.max_len))
-            accumul_pos += self.strides
+            accumul_pos += self.stride
         input_windows.append((accumul_pos, self.max_len))
 
         #Pass input_windows ids to BERT

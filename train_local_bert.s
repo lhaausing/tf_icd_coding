@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks-per-node=5
 #SBATCH --cpus-per-task=1
-#SBATCH --gres=gpu:p40:4
+#SBATCH --gres=gpu:p40:5
 #SBATCH --time=24:00:00
 #SBATCH --mem=32GB
 #SBATCH --job-name=bert_icd_pred
@@ -13,8 +13,8 @@
 
 overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
 model_name=bert_base
-batch_size=32
-n_gpu=4
+batch_size=16
+n_gpu=5
 n_epochs=40
 checkpt_path=../local_${model_name}_bs${batch_size}_sepcls.pt
 

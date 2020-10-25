@@ -149,8 +149,6 @@ class local_bert(nn.Module):
         self.c = n_class
         self.hid = self.bert.config.hidden_size
         self.max_len = self.bert.config.max_position_embeddings
-        self.mp_size = mp_size
-        self.use_attn = use_attn
         self.stride = stride
 
         #model blocks

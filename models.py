@@ -109,6 +109,7 @@ class cnn_bert(nn.Module):
         #layers
         self.wd_emb = self.bert.embeddings.word_embeddings
         self.conv = nn.Conv1d(self.hid, self.hid, self.ngram_size)
+        self.relu = nn.ReLU()
         self.maxpool = nn.MaxPool1d(self.mp_size)
         if self.use_attn:
             self.attn = Attn_Layer(self.hid, self.c)
@@ -122,6 +123,7 @@ class cnn_bert(nn.Module):
         if self.sep_cls:
             x_cls, x = x[:,:,0], x[:,:,1:]
             x = self.conv(x)
+            x = self.relu(x)
             x = torch.cat((x_cls.unsqueeze(2),x),2)
         else:
             x = self.conv(x)

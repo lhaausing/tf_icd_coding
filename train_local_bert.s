@@ -9,16 +9,14 @@
 #SBATCH --job-name=bert_icd_pred
 #SBATCH --mail-type=END
 #SBATCH --mail-user=xl3119@nyu.edu
-#SBATCH --output=/scratch/xl3119/tf_icd/cnn_base_bs32_ns32_ps32.log
+#SBATCH --output=/scratch/xl3119/tf_icd/local_base_bs32_ns32.log
 
 overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
 model_name=bert_base
 batch_size=32
-ngram_size=64
-maxpool_size=32
 n_gpu=3
 n_epochs=40
-checkpt_path=../cnn_${model_name}_bs${batch_size}_ns${ngram_size}_mp${maxpool_size}_sepcls_invw.pt
+checkpt_path=../local_${model_name}_bs${batch_size}_sepcls.pt
 
 singularity \
     exec --nv --overlay $overlay_ext3:ro \
@@ -31,9 +29,8 @@ singularity \
                   python3 main.py \
                               --data_dir ../data \
                               --model_name ../${model_name} \
+                              --local_model \
                               --n_epochs ${n_epochs} \
                               --batch_size ${batch_size} \
-                              --ngram_size ${ngram_size} \
-                              --maxpool_size ${maxpool_size} \
                               --n_gpu ${n_gpu} \
                               --checkpt_path ${checkpt_path} "

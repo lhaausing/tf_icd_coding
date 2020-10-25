@@ -67,10 +67,10 @@ def eval(model, tokenizer, val_loader, inv_w, device, ngram_size, use_ngram):
 def train(model_name, train_loader, val_loader, inv_w, tokenizer, device, ngram_size, maxpool_size, sep_cls, use_ngram, n_epochs, attn, lr, eps, n_gpu, checkpt_path, local_model):
 
     # Define model, parallel training, optimizer.
-    if not use_ngram:
-        model = cnn_bert(model_name, ngram_size, maxpool_size, sep_cls=sep_cls).to(device)
-    elif local_model:
+    if local_model:
         model = local_bert(model_name).to(device)
+    elif not use_ngram:
+        model = cnn_bert(model_name, ngram_size, maxpool_size, sep_cls=sep_cls).to(device)
     elif attn:
         model = NGramTransformer_Attn(model_name, ngram_size).to(device)
     else:

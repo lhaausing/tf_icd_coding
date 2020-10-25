@@ -179,6 +179,6 @@ class local_bert(nn.Module):
         x_cls = torch.bmm(attn_w, x_cls)
 
         #Fully Connected Layer
-        logits = self.fc()
+        logits = self.fc(x_cls)
 
-        return
+        return logits

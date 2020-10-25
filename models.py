@@ -127,6 +127,7 @@ class cnn_bert(nn.Module):
             x = torch.cat((x_cls.unsqueeze(2),x),2)
         else:
             x = self.conv(x)
+            x = self.relu(x)
         x = self.maxpool(x)
         x, x_cls  = self.bert(inputs_embeds=x.permute(0,2,1))
         if self.use_attn:

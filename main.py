@@ -87,6 +87,9 @@ def main():
                         default="./model.pt",
                         type=str,
                         help="Saving dir of the final checkpoint.")
+    parser.add_argument("--local_model",
+                        action="store_true",
+                        help="whether to use the local BERT model.")
     args = parser.parse_args()
 
     #define tokenizer
@@ -158,7 +161,8 @@ def main():
           args.lr,
           args.eps,
           args.n_gpu,
-          args.checkpt_path)
+          args.checkpt_path,
+          args.local_model)
 
 if __name__ == '__main__':
     main()

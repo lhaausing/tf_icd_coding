@@ -137,3 +137,48 @@ class cnn_bert(nn.Module):
             logits = self.out(x[:,0,:])
 
         return logits
+
+class local_bert(nn.Module):
+    def __init__(self, model_name='', n_class = 50, stride = 256):
+        super().__init__()
+        #Transformers Encoder
+        self.bert = AutoModel.from_pretrained(model_name)
+
+        #hyperparams
+        self.model_name = model_name
+        self.c = n_class
+        self.hid = self.bert.config.hidden_size
+        self.max_len = self.bert.config.max_position_embeddings
+        self.mp_size = mp_size
+        self.use_attn = use_attn
+        self.stride = stride
+
+        #model blocks
+        self.attn_w = nn.Linear(self.hid, self.hid)
+        self.fc = nn.Linear(self.hid, self.c)
+
+    def forward(self, input_ids):
+        #Calculate window spans
+        b_max_len = input_ids.size()[1]
+        accumul_pos = 0
+        input_windows = []
+        while accumul_pos < (b_max_len - self.max_len):
+            input_windows.append((accumul_pos, accumul_pos + self.max_len))
+            accumul_pos += self.strides
+        input_windows.append((accumul_pos, self.max_len))
+
+        #Pass input_windows ids to BERT
+        #Concatenate all pooled outputs
+        x_cls = [self.bert(input_ids[:,_[0]:_[1]])[1] for _ in input_windows]
+        x_cls = torch.cat([_.unsqueeze(1) for _ in x_cls], dim=1)
+
+        #Attention Layer
+        attn_w = self.w(x_cls)
+        attn_w = torch.transpose(attn_w, 1, 2)
+        attn_w = F.softmax(attn_weights, dim=2)
+        x_cls = torch.bmm(attn_w, x_cls)
+
+        #Fully Connected Layer
+        logits = self.fc()
+
+        return

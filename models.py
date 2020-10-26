@@ -152,7 +152,7 @@ class local_bert(nn.Module):
         self.stride = stride
 
         #model blocks
-        self.attn_w = nn.Linear(self.hid, self.hid)
+        self.attn_w = nn.Linear(self.hid, 1)
         self.fc = nn.Linear(self.hid, self.c)
 
     def forward(self, input_ids):
@@ -175,6 +175,7 @@ class local_bert(nn.Module):
         attn_w = torch.transpose(attn_w, 1, 2)
         attn_w = F.softmax(attn_weights, dim=2)
         x_cls = torch.bmm(attn_w, x_cls)
+        x_cls = x_cls.view(-1, self.hid)
 
         #Fully Connected Layer
         logits = self.fc(x_cls)

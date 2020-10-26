@@ -9,11 +9,11 @@
 #SBATCH --job-name=bert_icd_pred
 #SBATCH --mail-type=END
 #SBATCH --mail-user=xl3119@nyu.edu
-#SBATCH --output=/scratch/xl3119/tf_icd/local_base_bs4_stride256.log
+#SBATCH --output=/scratch/xl3119/tf_icd/local_base_bs32_stride256.log
 
 overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
 model_name=bert_base
-batch_size=4
+batch_size=32
 n_gpu=4
 n_epochs=40
 checkpt_path=../local_${model_name}_bs${batch_size}_sepcls.pt

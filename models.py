@@ -167,7 +167,10 @@ class local_bert(nn.Module):
 
         #Pass input_windows ids to BERT
         #Concatenate all pooled outputs
-        x_cls = [self.bert(input_ids[:,_[0]:_[1]])[1] for _ in input_windows]
+        x_cls = []
+        for _ in input_windows:
+            temp_x_cls = self.bert(input_ids[:,_[0]:_[1]])[1]
+            x_cls.append(temp_x_cls)
         x_cls = torch.cat([_.unsqueeze(1) for _ in x_cls], dim=1)
 
         #Attention Layer

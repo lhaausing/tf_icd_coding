@@ -21,4 +21,4 @@ python3 main.py \
   --local_model \
   --n_epochs ${n_epochs} \
   --batch_size ${batch_size} \
-  --checkpt_path ${checkpt_path} "
+  --checkpt_path ${checkpt_path}

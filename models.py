@@ -174,7 +174,7 @@ class local_bert(nn.Module):
         x_cls = torch.cat([_.unsqueeze(1) for _ in x_cls], dim=1)
 
         #Attention Layer
-        attn_w = self.w(x_cls)
+        attn_w = self.attn_w(x_cls)
         attn_w = torch.transpose(attn_w, 1, 2)
         attn_w = F.softmax(attn_weights, dim=2)
         x_cls = torch.bmm(attn_w, x_cls)

@@ -8,8 +8,7 @@
 #SBATCH --mem-per-cpu=32G
 #SBATCH --gres=gpu:8
 
-overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
-model_name=bert_base
+model_name=bert-base-uncased
 batch_size=64
 n_gpu=8
 n_epochs=40

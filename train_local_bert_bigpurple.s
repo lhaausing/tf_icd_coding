@@ -15,6 +15,8 @@ n_epochs=20
 checkpt_path=../local_${model_name}_bs${batch_size}_sepcls.pt
 
 module load cuda91/toolkit/9.1.85
+module load gcc/8.1.0
+module load python/gpu/3.6.5
 python main.py \
   --data_dir ../data \
   --model_name ${model_name} \

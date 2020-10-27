@@ -17,7 +17,7 @@ checkpt_path=../local_${model_name}_bs${batch_size}_sepcls.pt
 module load cuda91/toolkit/9.1.85
 python3 main.py \
   --data_dir ../data \
-  --model_name ../${model_name} \
+  --model_name ${model_name} \
   --local_model \
   --n_epochs ${n_epochs} \
   --batch_size ${batch_size} \

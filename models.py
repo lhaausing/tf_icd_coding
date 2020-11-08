@@ -58,13 +58,16 @@ class NGramTransformer(nn.Module):
         self.ngram_size = ngram_size
         self.model_name = model_name
         self.bert = AutoModel.from_pretrained(model_name)
-        self.hid = self.bert.config.hidden_size
-        self.out_layer = nn.Linear(self.hid, n_class)
+        self.hidden_size = self.bert.config.hidden_size
+        self.out_layer = nn.Linear(self.hidden_size, n_class)
         self.wd_emb = self.bert.embeddings.word_embeddings
 
     def forward(self, input_ids=None, ngram_encoding=None):
         embeds = torch.bmm(ngram_encoding, self.wd_emb(input_ids))
-        embeds, cls_embeds  = self.bert(inputs_embeds=embeds)
+        if "distil" in self.model_name:
+            embeds = self.bert(input_embeds=embeds)
+        else:
+            embeds, cls_embeds  = self.bert(inputs_embeds=embeds)
         logits = self.out_layer(embeds[:,0,:])
 
         return logits

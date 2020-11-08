@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=3
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=1
-#SBATCH --gres=gpu:3
+#SBATCH --gres=gpu:4
 #SBATCH --time=24:00:00
 #SBATCH --mem=32GB
 #SBATCH --job-name=get_logits
@@ -16,7 +16,7 @@ model_name=bert_base
 model_dir=../checkpt/bert_base_bs32_ns28_60.pt
 batch_size=8
 ngram_size=28
-n_gpu=3
+n_gpu=4
 
 singularity \
     exec --nv --overlay $overlay_ext3:ro \

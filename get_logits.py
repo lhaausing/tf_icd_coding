@@ -124,7 +124,7 @@ def main():
 
     model = torch.load(args.model_dir)
     #train
-    eval(model, tokenizer, val_loader, device, ngram_size)
+    eval(model, tokenizer, val_loader, args.device, args.ngram_size)
 
 if __name__ == '__main__':
     main()

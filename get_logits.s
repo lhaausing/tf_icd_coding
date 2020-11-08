@@ -13,7 +13,7 @@
 
 overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
 model_name=bert_base
-model_dir = ../checkpt/bert_base_bs32_ns28_60.pt
+model_dir=../checkpt/bert_base_bs32_ns28_60.pt
 batch_size=8
 ngram_size=28
 n_gpu=3

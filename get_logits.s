@@ -34,4 +34,4 @@ singularity \
                               --ngram_size ${ngram_size} \
                               --use_ngram \
                               --sep_cls \
-                              --n_gpu ${n_gpu} \"
+                              --n_gpu ${n_gpu} "

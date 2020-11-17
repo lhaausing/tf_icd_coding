@@ -41,5 +41,5 @@ singularity \
                               --save_best_f1 \
                               --save_best_auc \
                               --data_dir ../data \
-                              --load_data_cache \
+                              #--load_data_cache \
                               --seed ${seed} "

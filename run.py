@@ -90,6 +90,7 @@ def train(args, train_loader, val_loader):
         for idx, (input_ids, ngram_encoding, attn_mask, labels) in enumerate(train_loader):
 
             model.train()
+            print(input_ids.size(), ngram_encoding.size())
             if args.use_ngram: logits = model(input_ids, ngram_encoding)
             else: logits = model(input_ids)
             loss = criterion(logits.to(args.device), labels.to(args.device))

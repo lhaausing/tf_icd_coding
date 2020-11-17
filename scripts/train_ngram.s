@@ -1,11 +1,11 @@
 #!/bin/bash
 
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=3
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=1
-#SBATCH --gres=gpu:p40:3
+#SBATCH --gres=gpu:p40:4
 #SBATCH --time=24:00:00
-#SBATCH --mem=32GB
+#SBATCH --mem=64GB
 #SBATCH --job-name=bert_icd_pred
 #SBATCH --mail-type=END
 #SBATCH --mail-user=xl3119@nyu.edu
@@ -15,7 +15,7 @@ overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
 model_name=bert_base
 batch_size=48
 ngram_size=28
-n_gpu=3
+n_gpu=4
 n_epochs=60
 seed=66
 checkpt_path=../global_${model_name}_ns${ngram_size}_mp${maxpool_size}_seed${seed}sepcls_invw.pt

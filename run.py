@@ -107,7 +107,7 @@ def train(args, train_loader, val_loader):
         logger.info('epoch: %d', i+1)
         logger.info('train loss is %s.', total_loss / num_examples)
 
-        metrics = eval(model, val_loader)
+        metrics = eval(args, model, val_loader)
 
         if args.save_best_f1:
             if metrics["f1_micro"] > best_f1:

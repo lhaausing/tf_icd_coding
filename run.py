@@ -2,10 +2,12 @@
 
 import os
 import re
+import sys
 import glob
 import pickle
 import logging
 import argparse
+from tqdm import tqdm
 from os.path import join
 
 import math
@@ -42,7 +44,6 @@ def set_global_logging_level(level=logging.ERROR, prefices=[""]):
             logging.getLogger(name).setLevel(level)
 
 set_global_logging_level(logging.ERROR, ["transformers", "nlp", "torch", "tensorflow", "tensorboard", "wandb"])
-logger = logging.getLogger(__name__)
 
 def eval(args, model, val_loader):
     model.eval()
@@ -55,7 +56,7 @@ def eval(args, model, val_loader):
     yhat_raw = []
 
     with torch.no_grad():
-        for idx, (input_ids, attn_mask, labels) in enumerate(val_loader):
+        for idx, (input_ids, attn_mask, labels) in tqdm(enumerate(val_loader)):
             if args.use_ngram:
                 ngram_encoding = get_ngram_encoding(attn_mask.to(args.device), args.ngram_size).cpu()
                 logits = model(input_ids, ngram_encoding)
@@ -96,15 +97,24 @@ def eval(args, model, val_loader):
         yhat_raw = np.concatenate(yhat_raw, axis=0)
         metrics = all_metrics(yhat, y, k=k, yhat_raw=yhat_raw)
 
-        logger.info('validation loss is %s.', total_loss/num_examples)
-        logger.info("[MACRO] acc, prec, rec, f1, auc")
-        logger.info("%s, %s, %s, %s, %s", metrics["acc_macro"], metrics["prec_macro"], metrics["rec_macro"], metrics["f1_macro"], metrics["auc_macro"])
-        logger.info("[MICRO] accuracy, precision, recall, f-measure, AUC")
-        logger.info("%s, %s, %s, %s, %s", metrics["acc_micro"], metrics["prec_micro"], metrics["rec_micro"], metrics["f1_micro"], metrics["auc_micro"])
+        print('validation loss is {}.'.format(total_loss/num_examples))
+        print("[MACRO] acc, prec, rec, f1, auc")
+        print("{}, {}, {}, {}, {}".format(metrics["acc_macro"],
+                                          metrics["prec_macro"],
+                                          metrics["rec_macro"],
+                                          metrics["f1_macro"],
+                                          metrics["auc_macro"]))
+        print("[MICRO] accuracy, precision, recall, f-measure, AUC")
+        print("{}, {}, {}, {}, {}".format(metrics["acc_micro"],
+                                          metrics["prec_micro"],
+                                          metrics["rec_micro"],
+                                          metrics["f1_micro"],
+                                          metrics["auc_micro"]))
 
         for metric, val in metrics.items():
             if metric.find("rec_at") != -1:
-                logger.info("%s: %s" % (metric, val))
+                print("{}: {}".format(metric, val))
+        sys.stdout.flush()
 
         return metrics
 
@@ -129,7 +139,7 @@ def train(args, train_loader, val_loader):
     for i in range(args.n_epochs):
         total_loss = 0.
         num_examples = 0
-        for idx, (input_ids, attn_mask, labels) in enumerate(train_loader):
+        for idx, (input_ids, attn_mask, labels) in tqdm(enumerate(train_loader)):
 
             model.train()
             if args.use_ngram:
@@ -165,9 +175,10 @@ def train(args, train_loader, val_loader):
                 num_examples += num_snippets
                 total_loss += batch_loss
 
-        logger.info('')
-        logger.info('epoch: %d', i+1)
-        logger.info('train loss is %s.', total_loss / num_examples)
+        print('')
+        print('epoch: {}'.format(i+1))
+        print('train loss is {}.'.format(total_loss / num_examples))
+        sys.stdout.flush()
 
         metrics = eval(args, model, val_loader)
 
@@ -283,6 +294,8 @@ def main():
                              collate_fn=test_dataset.mimic3_col_func,
                              shuffle=True)
 
+    print('Data loader is loaded, start training.')
+    sys.stdout.flush()
     #train
     train(args, train_loader, val_loader)
 

@@ -13,9 +13,9 @@
 
 overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
 model_name=bert_base
-batch_size=32
+batch_size=48
 ngram_size=28
-n_gpu=3
+n_gpu=4
 n_epochs=60
 seed=66
 checkpt_path=../global_${model_name}_ns${ngram_size}_mp${maxpool_size}_seed${seed}sepcls_invw.pt
@@ -41,4 +41,5 @@ singularity \
                               --save_best_f1 \
                               --save_best_auc \
                               --data_dir ../data \
+                              --load_data_cache \
                               --seed ${seed} "

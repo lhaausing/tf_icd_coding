@@ -39,8 +39,8 @@ def eval(args, model, val_loader):
     with torch.no_grad():
         for idx, (input_ids, ngram_encoding, labels) in enumerate(val_loader):
             if args.use_ngram:
-                logits = model(input_ids.to(args.device), ngram_encoding.to(args.device))
-                loss = criterion(logits, labels.to(args.device))
+                logits = model(input_ids, ngram_encoding)
+                loss = criterion(logits.to(args.device), labels.to(args.device))
                 total_loss += loss.item() * logits.size()[0]
                 num_examples += logits.size()[0]
                 y.append(labels.cpu().detach().numpy())
@@ -89,14 +89,11 @@ def train(args, train_loader, val_loader):
         num_examples = 0
         for idx, (input_ids, ngram_encoding, attn_mask, labels) in enumerate(train_loader):
 
-            input_ids = input_ids.to(args.device)
-            ngram_encoding = ngram_encoding.to(args.device)
-            labels = labels.to(args.device)
-
             model.train()
+            print(input_ids.size(), ngram_encoding.size())
             if args.use_ngram: logits = model(input_ids, ngram_encoding)
             else: logits = model(input_ids)
-            loss = criterion(logits, labels)
+            loss = criterion(logits.to(args.device), labels.to(args.device))
 
             loss.backward()
             optimizer.step()

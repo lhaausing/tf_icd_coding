@@ -32,6 +32,72 @@ def get_ngram_encoding(attn_mask=None, ngram_size=None, sep_cls=True):
 
     return ngram_encoding.type(torch.FloatTensor)
 
+def get_train_snippets(input_ids, attn_masks, labels, batch_size=16, max_len=510):
+
+    lens = (torch.sum(attn_masks, dim=1)-2).type(torch.IntTensor).tolist()
+    n_sni = [max_len*(int(elem/max_len)+1) for elem in lens]
+    #Add max_len to tensor
+    input_ids = torch.cat([input_ids, torch.Tensor([0]).repeat(input_ids.size(0),max_len).type(torch.LongTensor)], dim=1)
+    attn_masks = torch.cat([attn_masks, torch.Tensor([0]).repeat(attn_masks.size(0),max_len).type(torch.LongTensor)], dim=1)
+    #Extract discharge summary ids
+    input_ids = [(input_ids[i,1:n_sni[i]+1],input_ids[i,n_sni[i]+1]) for i in range(input_ids.size(0))]
+    attn_masks = [(attn_masks[i,1:n_sni[i]+1],attn_masks[i,n_sni[i]+1]) for i in range(attn_masks.size(0))]
+    #Transform ids
+    input_ids = [(elem[0].view(-1, max_len), elem[1].item()) for elem in input_ids]
+    attn_masks = [(elem[0].view(-1, max_len), elem[1].item()) for elem in attn_masks]
+    #Insert CLS and SEP ids
+    input_ids = [(torch.Tensor([[101]]*elem[0].size(0)), elem[0], torch.Tensor([[102]]*(elem[0].size(0)-1)+[[elem[1]]])) for elem in input_ids]
+    attn_masks = [(torch.Tensor([[1]]*elem[0].size(0)), elem[0], torch.Tensor([[1]]*(elem[0].size(0)-1)+[[elem[1]]])) for elem in attn_masks]
+    input_ids = [torch.cat([elem[0].type(torch.LongTensor), elem[1].type(torch.LongTensor), elem[2].type(torch.LongTensor)], dim=1) for elem in input_ids]
+    attn_masks = [torch.cat([elem[0].type(torch.LongTensor), elem[1].type(torch.LongTensor), elem[2].type(torch.LongTensor)], dim=1) for elem in attn_masks]
+    #Get discharge summary labels
+    labels = [labels[i,:].repeat(input_ids[i].size(0),1) for i in range(labels.size(0))]
+
+    assert (len(input_ids)==len(attn_masks)==len(labels))
+    input_ids = [text[i,:] for text in input_ids for i in range(text.size(0))]
+    attn_masks = [text[i,:] for text in attn_masks for i in range(text.size(0))]
+    labels = [text[i,:] for text in labels for i in range(text.size(0))]
+
+    assert (len(input_ids)==len(attn_masks)==len(labels))
+    ids = [_ for _ in range(len(labels))]
+    random.shuffle(ids)
+    input_ids = [input_ids[i].unsqueeze(0) for i in ids]
+    attn_masks = [attn_masks[i].unsqueeze(0) for i in ids]
+    labels = [labels[i].unsqueeze(0) for i in ids]
+
+    final_input_ids = []
+    final_attn_masks = []
+    final_labels = []
+
+    num_blocks = int(math.ceil(len(ids)/batch_size))
+    input_ids = [torch.cat(input_ids[batch_size*i:batch_size*(i+1)], dim=0) for i in range(num_blocks)]
+    attn_masks = [torch.cat(attn_masks[batch_size*i:batch_size*(i+1)], dim=0) for i in range(num_blocks)]
+    labels = [torch.cat(labels[batch_size*i:batch_size*(i+1)], dim=0) for i in range(num_blocks)]
+
+    return input_ids, attn_masks, labels
+
+def get_val_snippets(input_ids, attn_masks, labels, batch_size=16, max_len=510):
+
+    lens = (torch.sum(attn_masks, dim=1)-2).type(torch.IntTensor).tolist()
+    n_sni = [max_len*(int(elem/max_len)+1) for elem in lens]
+    input_ids = torch.cat([input_ids, torch.Tensor([0]).repeat(input_ids.size(0),max_len).type(torch.LongTensor)], dim=1)
+    attn_masks = torch.cat([attn_masks, torch.Tensor([0]).repeat(attn_masks.size(0),max_len).type(torch.LongTensor)], dim=1)
+    #Extract discharge summary ids
+    input_ids = [(input_ids[i,1:n_sni[i]+1],input_ids[i,n_sni[i]+1]) for i in range(input_ids.size(0))]
+    attn_masks = [(attn_masks[i,1:n_sni[i]+1],attn_masks[i,n_sni[i]+1]) for i in range(attn_masks.size(0))]
+    #Transform ids
+    input_ids = [(elem[0].view(-1, max_len), elem[1].item()) for elem in input_ids]
+    attn_masks = [(elem[0].view(-1, max_len), elem[1].item()) for elem in attn_masks]
+    #Insert CLS and SEP ids
+    input_ids = [(torch.Tensor([[101]]*elem[0].size(0)), elem[0], torch.Tensor([[102]]*(elem[0].size(0)-1)+[[elem[1]]])) for elem in input_ids]
+    attn_masks = [(torch.Tensor([[1]]*elem[0].size(0)), elem[0], torch.Tensor([[1]]*(elem[0].size(0)-1)+[[elem[1]]])) for elem in attn_masks]
+    input_ids = [torch.cat([elem[0].type(torch.LongTensor), elem[1].type(torch.LongTensor), elem[2].type(torch.LongTensor)], dim=1) for elem in input_ids]
+    attn_masks = [torch.cat([elem[0].type(torch.LongTensor), elem[1].type(torch.LongTensor), elem[2].type(torch.LongTensor)], dim=1) for elem in attn_masks]
+    #Get discharge summary labels
+    labels = [labels[i,:].repeat(input_ids[i].size(0),1) for i in range(labels.size(0))]
+
+    return input_ids, attn_masks, labels
+
 def union_size(yhat, y, axis):
     #axis=0 for label-level union (macro). axis=1 for instance-level
     return np.logical_or(yhat, y).sum(axis=axis).astype(float)

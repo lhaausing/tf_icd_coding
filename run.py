@@ -37,21 +37,45 @@ def eval(args, model, val_loader):
     yhat_raw = []
 
     with torch.no_grad():
-        for idx, (input_ids, ngram_encoding, labels) in enumerate(val_loader):
+        for idx, (input_ids, attn_mask, labels) in enumerate(val_loader):
             if args.use_ngram:
+                ngram_encoding = get_ngram_encoding(attn_mask.to(args.device), args.ngram_size).cpu()
                 logits = model(input_ids, ngram_encoding)
                 loss = criterion(logits.to(args.device), labels.to(args.device))
+
                 total_loss += loss.item() * logits.size()[0]
                 num_examples += logits.size()[0]
+
                 y.append(labels.cpu().detach().numpy())
                 yhat.append(np.round(torch.sigmoid(logits).cpu().detach().numpy()))
                 yhat_raw.append(torch.sigmoid(logits).cpu().detach().numpy())
+            else:
+                input_ids, attn_masks, list_labels = get_val_snippets(input_ids, attn_masks, labels, batch_size=args.batch_size, max_len=args.max_len)
+                batch_loss = 0.
+                num_snippets = 0
+                all_preds = []
+                for i in range(len(input_ids)):
+                    logits = model(input_ids[i].to(args.device), attn_masks[i].to(args.device))
+                    loss = criterion(logits, list_labels[i].to(args.device))
+
+                    num_snippets += input_ids[i].size(0)
+                    batch_loss += loss.item() * input_ids[i].size(0)
+
+                    logits = torch.mean(torch.sigmoid(logits), dim=0)
+                    all_preds.append(logits.unsqueeze(0))
+                #Report results
+                total_loss += batch_loss
+                logits = torch.cat(all_preds, dim=0)
+                num_examples += num_snippets
+
+                y.append(labels.cpu().detach().numpy())
+                yhat.append(np.round(logits.cpu().detach().numpy()))
+                yhat_raw.append(logits.cpu().detach().numpy())
 
         # Compute scores with results
         y = np.concatenate(y, axis=0)
         yhat = np.concatenate(yhat, axis=0)
         yhat_raw = np.concatenate(yhat_raw, axis=0)
-        metrics = all_metrics(yhat, y, k=k, yhat_raw=yhat_raw)
         metrics = all_metrics(yhat, y, k=k, yhat_raw=yhat_raw)
 
         logger.info('validation loss is %s.', total_loss/num_examples)
@@ -93,15 +117,35 @@ def train(args, train_loader, val_loader):
             if args.use_ngram:
                 ngram_encoding = get_ngram_encoding(attn_mask.to(args.device), args.ngram_size).cpu()
                 logits = model(input_ids, ngram_encoding)
-            else:
-                logits = model(input_ids)
-            loss = criterion(logits.to(args.device), labels.to(args.device))
+                loss = criterion(logits.to(args.device), labels.to(args.device))
 
-            loss.backward()
-            optimizer.step()
-            model.zero_grad()
-            total_loss += loss.item() * logits.size()[0]
-            num_examples += logits.size()[0]
+                loss.backward()
+                optimizer.step()
+                model.zero_grad()
+
+                num_examples += logits.size()[0]
+                total_loss += loss.item() * logits.size()[0]
+
+            else:
+                input_ids, attn_masks, labels = get_train_snippets(input_ids, attn_masks, labels, batch_size=args.batch_size, max_len=args.max_len)
+
+                batch_loss = 0.
+                num_snippets = 0
+                for i in range(len(input_ids)):
+
+                    logits = model(input_ids[i].to(args.device), attn_masks[i].to(args.device))
+                    loss = criterion(logits, labels[i].to(args.device))
+
+                    loss.backward()
+                    optimizer.step()
+                    model.zero_grad()
+
+                    #Aggregating losses
+                    num_snippets += input_ids[i].size(0)
+                    batch_loss += loss.item() * input_ids[i].size(0)
+
+                num_examples += num_snippets
+                total_loss += batch_loss
 
         logger.info('')
         logger.info('epoch: %d', i+1)

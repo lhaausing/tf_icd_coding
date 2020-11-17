@@ -36,8 +36,8 @@ class mimic3_dataset(Dataset):
         return [self.idx[key], self.texts[key], self.labels[key]]
 
     def mimic3_col_func(self, batch):
-        inputs = self.tokenizer([elem[1] for elem in batch], return_tensors='pt', padding=True)
         logging.getLogger("transformers.tokenization").setLevel(logging.ERROR)
+        inputs = self.tokenizer([elem[1] for elem in batch], return_tensors='pt', padding=True)
         input_ids = inputs["input_ids"]
         attn_mask = inputs['attention_mask']
         labels = torch.cat([elem[2].unsqueeze(0) for elem in batch], dim=0).type('torch.FloatTensor')

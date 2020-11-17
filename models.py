@@ -13,8 +13,6 @@ from torch.utils.data import Dataset, DataLoader
 import transformers
 from transformers import AutoTokenizer, AutoModel
 
-from utils import all_metrics, print_metrics
-
 class Attn_Layer(nn.Module):
     """
     Calculate attention for each label.

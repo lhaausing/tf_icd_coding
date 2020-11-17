@@ -26,7 +26,7 @@ from models import *
 
 logger = logging.getLogger(__name__)
 
-def eval(model, val_loader):
+def eval(args, model, val_loader):
     model.eval()
     total_loss = 0.
     num_examples = 0
@@ -66,7 +66,7 @@ def eval(model, val_loader):
 
         return metrics
 
-def train(train_loader, val_loader):
+def train(args, train_loader, val_loader):
     # Define model, parallel training, optimizer.
     if args.use_ngram: model = NGramTransformer(args.model_name,args.ngram_size)
     else: model = local_bert(args.model_name)
@@ -224,7 +224,7 @@ def main():
                              shuffle=True)
 
     #train
-    train(train_loader, val_loader)
+    train(args, train_loader, val_loader)
 
 if __name__ == '__main__':
     main()

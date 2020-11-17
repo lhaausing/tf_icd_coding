@@ -212,6 +212,7 @@ def main():
 
     #define tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    logging.getLogger("transformers.tokenization").setLevel(logging.ERROR)
 
     if args.load_data_cache:
         train_dataset = pickle.load(open(join(args.data_dir,'train_50.pkl'),'rb'))

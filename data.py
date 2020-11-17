@@ -43,9 +43,10 @@ class mimic3_dataset(Dataset):
 
     def mimic3_col_func(self, batch):
         input_ids = torch.LongTensor([elem[2] for elem in batch])
-        ngram_encoding = get_ngram_encoding(attn_mask=torch.Tensor([elem[4] for elem in batch]),
+        attn_mask = torch.Tensor([elem[4] for elem in batch])
+        ngram_encoding = get_ngram_encoding(attn_mask=attn_mask,
                                             ngram_size=self.ngram_size,
                                             sep_cls=True)
-        labels = torch.cat([elem[2].unsqueeze(0) for elem in batch], dim=0).type('torch.FloatTensor')
+        labels = torch.cat([elem[3].unsqueeze(0) for elem in batch], dim=0).type('torch.FloatTensor')
 
-        return (input_ids, ngram_encoding, labels)
+        return (input_ids, ngram_encoding, attn_mask, labels)

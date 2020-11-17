@@ -87,7 +87,7 @@ def train(args, train_loader, val_loader):
     for i in range(args.n_epochs):
         total_loss = 0.
         num_examples = 0
-        for idx, (input_ids, ngram_encoding, labels) in enumerate(train_loader):
+        for idx, (input_ids, ngram_encoding, attn_mask, labels) in enumerate(train_loader):
 
             input_ids = input_ids.to(args.device)
             ngram_encoding = ngram_encoding.to(args.device)

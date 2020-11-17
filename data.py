@@ -39,6 +39,6 @@ class mimic3_dataset(Dataset):
         inputs = self.tokenizer([elem[1] for elem in batch], return_tensors='pt', padding=True)
         input_ids = inputs["input_ids"]
         attn_mask = inputs['attention_mask']
-        labels = torch.cat([elem[4].unsqueeze(0) for elem in batch], dim=0).type('torch.FloatTensor')
+        labels = torch.cat([elem[2].unsqueeze(0) for elem in batch], dim=0).type('torch.FloatTensor')
 
         return (input_ids, attn_mask, labels)

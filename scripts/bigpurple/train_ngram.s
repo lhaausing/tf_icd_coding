@@ -21,7 +21,8 @@ checkpt_path=../ngram_bs${batch_size}_seed${seed}
 module load anaconda3/gpu/5.2.0
 module load cuda/10.1.105
 module load gcc/8.1.0
-conda activate bento
+source activate bento
+export PYTHONPATH=/gpfs/share/apps/anaconda3/gpu/5.2.0/envs/bento/lib/python3.8/site-packages:$PYTHONPATH
 
 cd /gpfs/scratch/xl3119/tf_icd_coding
 
@@ -33,7 +34,6 @@ python run.py \
   --batch_size ${batch_size} \
   --ngram_size ${ngram_size} \
   --use_ngram \
-  --sep_cls \
   --n_gpu ${n_gpu} \
   --checkpt_path ${checkpt_path} \
   --save_best_f \

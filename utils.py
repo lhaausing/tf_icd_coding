@@ -1,50 +1,129 @@
-import csv
+import os
+import re
+import sys
+import glob
 import json
-import math
-import torch
-import numpy as np
+import pickle
+import logging
+import argparse
 from tqdm import tqdm
+from os.path import join
+
+import math
+import numpy as np
+import pandas as pd
 from scipy.sparse import csr_matrix
 from sklearn.metrics import roc_curve, auc
 
-def get_ngram_encoding(attn_mask=None, ngram_size=None, sep_cls=True):
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
 
+import transformers
+from transformers import AutoTokenizer, AutoModel
+
+from data import *
+from models import *
+
+def set_global_logging_level(level=logging.ERROR, prefices=[""]):
+    """
+    Override logging levels of different modules based on their name as a prefix.
+    It needs to be invoked after the modules have been loaded so that their loggers have been initialized.
+
+    Args:
+        - level: desired level. e.g. logging.INFO. Optional. Default is logging.ERROR
+        - prefices: list of one or more str prefices to match (e.g. ["transformers", "torch"]). Optional.
+          Default is `[""]` to match all active loggers.
+          The match is a case-sensitive `module_name.startswith(prefix)`
+    """
+    prefix_re = re.compile(fr'^(?:{ "|".join(prefices) })')
+    for name in logging.root.manager.loggerDict:
+        if re.match(prefix_re, name):
+            logging.getLogger(name).setLevel(level)
+
+def load_cache(args):
+    train_dataset = pickle.load(open(join(args.data_dir,'train_50.pkl'),'rb'))
+    val_dataset = pickle.load(open(join(args.data_dir,'dev_50.pkl'),'rb'))
+    test_dataset = pickle.load(open(join(args.data_dir,'test_50.pkl'),'rb'))
+
+    return train_dataset, val_dataset, test_dataset
+
+def load_data_and_save_cache(args):
+    train_df = pd.read_csv(join(args.data_dir,'train_50.csv'),engine='python')
+    val_df = pd.read_csv(join(args.data_dir,'dev_50.csv'),engine='python')
+    test_df = pd.read_csv(join(args.data_dir,'test_50.csv'),engine='python')
+
+    #load text
+    train_texts = [elem[6:-6] for elem in train_df['TEXT']]
+    val_texts = [elem[6:-6] for elem in val_df['TEXT']]
+    test_texts = [elem[6:-6] for elem in test_df['TEXT']]
+
+    #load and transform labels
+    with open(join(args.data_dir,'TOP_50_CODES.csv'),'r') as f:
+        idx2code = [elem[:-1] for elem in f.readlines()]
+        f.close()
+    code2idx = {elem:i for i, elem in enumerate(idx2code)}
+
+    train_codes = [[code2idx[code] for code in elem.split(';')] for elem in train_df['LABELS']]
+    val_codes = [[code2idx[code] for code in elem.split(';')] for elem in val_df['LABELS']]
+    test_codes = [[code2idx[code] for code in elem.split(';')] for elem in test_df['LABELS']]
+
+    train_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in train_codes]
+    val_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in val_codes]
+    test_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in test_codes]
+
+    #build dataset and dataloader
+    train_dataset = mimic3_dataset(train_texts, train_labels, args.ngram_size, tokenizer, args.use_ngram)
+    val_dataset = mimic3_dataset(val_texts, val_labels, args.ngram_size, tokenizer, args.use_ngram)
+    test_dataset = mimic3_dataset(test_texts, test_labels, args.ngram_size, tokenizer, args.use_ngram)
+
+    pickle.dump(train_dataset, open(join(args.data_dir,'train_50.pkl'),'wb'))
+    pickle.dump(val_dataset, open(join(args.data_dir,'dev_50.pkl'),'wb'))
+    pickle.dump(test_dataset, open(join(args.data_dir,'test_50.pkl'),'wb'))
+
+    return train_dataset, val_dataset, test_dataset
+
+def get_ngram_encoding(args, attn_mask=None, ngram_size=None, sep_cls=True):
+
+    attn_mask = attn_mask.to(args.device)
     sent_lens = torch.sum(attn_mask,1)
     if sep_cls:
         sent_lens -= 1
     max_sent_len = torch.max(sent_lens).item()
     num_ngram = [math.ceil(elem / ngram_size) for elem in sent_lens.tolist()]
     max_num_ngram = max(num_ngram)
-    arange_t = torch.arange(max_sent_len)
+    arange_t = torch.arange(max_sent_len).to(args.device)
 
     ngram_pos = [[min(j * ngram_size, sent_lens[i].item()) for j in range(elem+1)] for i, elem in enumerate(num_ngram)]
     for i in range(len(ngram_pos)):
         ngram_pos[i] = ngram_pos[i] + [-1]*(max_num_ngram+1-len(ngram_pos[i]))
-    ngram_encoding = [torch.cat([((arange_t>=elem[i])*(arange_t<elem[i+1])).unsqueeze(0) for i in range(max_num_ngram)]).unsqueeze(0) for elem in ngram_pos]
+    ngram_encoding = [torch.cat([((arange_t>=elem[i])*(arange_t<elem[i+1])).unsqueeze(0).to(args.device) for i in range(max_num_ngram)]).unsqueeze(0) for elem in ngram_pos]
     ngram_encoding = torch.cat(ngram_encoding)
 
     if sep_cls:
         size = ngram_encoding.size()
-        zero_pos = torch.zeros(size[0],size[1],1,dtype=torch.bool)
-        cls_pos = torch.BoolTensor([[[1]+[0]*(size[2])]]*size[0])
+        zero_pos = torch.zeros(size[0],size[1],1,dtype=torch.bool).to(args.device)
+        cls_pos = torch.BoolTensor([[[1]+[0]*(size[2])]]*size[0]).to(args.device)
         ngram_encoding = torch.cat([zero_pos, ngram_encoding], dim=2)
         ngram_encoding = torch.cat([cls_pos, ngram_encoding], dim=1)
 
     return ngram_encoding.type(torch.FloatTensor)
 
-def get_train_snippets(input_ids, attn_masks, labels, batch_size=16, max_len=510):
+def get_train_snippets(args, input_ids, attn_masks, labels, max_len=510):
 
     lens = (torch.sum(attn_masks, dim=1)-2).type(torch.IntTensor).tolist()
-    n_sni = [max_len*(int(elem/max_len)+1) for elem in lens]
+    n_sni = [args.max_len*(int(elem/args.max_len)+1) for elem in lens]
     #Add max_len to tensor
-    input_ids = torch.cat([input_ids, torch.Tensor([0]).repeat(input_ids.size(0),max_len).type(torch.LongTensor)], dim=1)
-    attn_masks = torch.cat([attn_masks, torch.Tensor([0]).repeat(attn_masks.size(0),max_len).type(torch.LongTensor)], dim=1)
+    input_ids = torch.cat([input_ids, torch.Tensor([0]).repeat(input_ids.size(0),args.max_len).type(torch.LongTensor)], dim=1)
+    attn_masks = torch.cat([attn_masks, torch.Tensor([0]).repeat(attn_masks.size(0),args.max_len).type(torch.LongTensor)], dim=1)
     #Extract discharge summary ids
     input_ids = [(input_ids[i,1:n_sni[i]+1],input_ids[i,n_sni[i]+1]) for i in range(input_ids.size(0))]
     attn_masks = [(attn_masks[i,1:n_sni[i]+1],attn_masks[i,n_sni[i]+1]) for i in range(attn_masks.size(0))]
     #Transform ids
-    input_ids = [(elem[0].view(-1, max_len), elem[1].item()) for elem in input_ids]
-    attn_masks = [(elem[0].view(-1, max_len), elem[1].item()) for elem in attn_masks]
+    input_ids = [(elem[0].view(-1, args.max_len), elem[1].item()) for elem in input_ids]
+    attn_masks = [(elem[0].view(-1, args.max_len), elem[1].item()) for elem in attn_masks]
     #Insert CLS and SEP ids
     input_ids = [(torch.Tensor([[101]]*elem[0].size(0)), elem[0], torch.Tensor([[102]]*(elem[0].size(0)-1)+[[elem[1]]])) for elem in input_ids]
     attn_masks = [(torch.Tensor([[1]]*elem[0].size(0)), elem[0], torch.Tensor([[1]]*(elem[0].size(0)-1)+[[elem[1]]])) for elem in attn_masks]
@@ -69,25 +148,25 @@ def get_train_snippets(input_ids, attn_masks, labels, batch_size=16, max_len=510
     final_attn_masks = []
     final_labels = []
 
-    num_blocks = int(math.ceil(len(ids)/batch_size))
-    input_ids = [torch.cat(input_ids[batch_size*i:batch_size*(i+1)], dim=0) for i in range(num_blocks)]
-    attn_masks = [torch.cat(attn_masks[batch_size*i:batch_size*(i+1)], dim=0) for i in range(num_blocks)]
-    labels = [torch.cat(labels[batch_size*i:batch_size*(i+1)], dim=0) for i in range(num_blocks)]
+    num_blocks = int(math.ceil(len(ids)/args.batch_size))
+    input_ids = [torch.cat(input_ids[args.batch_size*i:args.batch_size*(i+1)], dim=0) for i in range(num_blocks)]
+    attn_masks = [torch.cat(attn_masks[args.batch_size*i:args.batch_size*(i+1)], dim=0) for i in range(num_blocks)]
+    labels = [torch.cat(labels[args.batch_size*i:args.batch_size*(i+1)], dim=0) for i in range(num_blocks)]
 
     return input_ids, attn_masks, labels
 
-def get_val_snippets(input_ids, attn_masks, labels, batch_size=16, max_len=510):
+def get_val_snippets(args, input_ids, attn_masks, labels):
 
     lens = (torch.sum(attn_masks, dim=1)-2).type(torch.IntTensor).tolist()
-    n_sni = [max_len*(int(elem/max_len)+1) for elem in lens]
-    input_ids = torch.cat([input_ids, torch.Tensor([0]).repeat(input_ids.size(0),max_len).type(torch.LongTensor)], dim=1)
-    attn_masks = torch.cat([attn_masks, torch.Tensor([0]).repeat(attn_masks.size(0),max_len).type(torch.LongTensor)], dim=1)
+    n_sni = [args.max_len*(int(elem/args.max_len)+1) for elem in lens]
+    input_ids = torch.cat([input_ids, torch.Tensor([0]).repeat(input_ids.size(0),args.max_len).type(torch.LongTensor)], dim=1)
+    attn_masks = torch.cat([attn_masks, torch.Tensor([0]).repeat(attn_masks.size(0),args.max_len).type(torch.LongTensor)], dim=1)
     #Extract discharge summary ids
     input_ids = [(input_ids[i,1:n_sni[i]+1],input_ids[i,n_sni[i]+1]) for i in range(input_ids.size(0))]
     attn_masks = [(attn_masks[i,1:n_sni[i]+1],attn_masks[i,n_sni[i]+1]) for i in range(attn_masks.size(0))]
     #Transform ids
-    input_ids = [(elem[0].view(-1, max_len), elem[1].item()) for elem in input_ids]
-    attn_masks = [(elem[0].view(-1, max_len), elem[1].item()) for elem in attn_masks]
+    input_ids = [(elem[0].view(-1, args.max_len), elem[1].item()) for elem in input_ids]
+    attn_masks = [(elem[0].view(-1, args.max_len), elem[1].item()) for elem in attn_masks]
     #Insert CLS and SEP ids
     input_ids = [(torch.Tensor([[101]]*elem[0].size(0)), elem[0], torch.Tensor([[102]]*(elem[0].size(0)-1)+[[elem[1]]])) for elem in input_ids]
     attn_masks = [(torch.Tensor([[1]]*elem[0].size(0)), elem[0], torch.Tensor([[1]]*(elem[0].size(0)-1)+[[elem[1]]])) for elem in attn_masks]

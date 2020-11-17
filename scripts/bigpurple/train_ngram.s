@@ -36,5 +36,6 @@ python run.py \
   --use_ngram \
   --n_gpu ${n_gpu} \
   --checkpt_path ${checkpt_path} \
+  --load_data_cache \
   --save_best_f \
   --save_best_auc

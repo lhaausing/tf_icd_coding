@@ -27,22 +27,6 @@ from data import *
 from utils import *
 from models import *
 
-def set_global_logging_level(level=logging.ERROR, prefices=[""]):
-    """
-    Override logging levels of different modules based on their name as a prefix.
-    It needs to be invoked after the modules have been loaded so that their loggers have been initialized.
-
-    Args:
-        - level: desired level. e.g. logging.INFO. Optional. Default is logging.ERROR
-        - prefices: list of one or more str prefices to match (e.g. ["transformers", "torch"]). Optional.
-          Default is `[""]` to match all active loggers.
-          The match is a case-sensitive `module_name.startswith(prefix)`
-    """
-    prefix_re = re.compile(fr'^(?:{ "|".join(prefices) })')
-    for name in logging.root.manager.loggerDict:
-        if re.match(prefix_re, name):
-            logging.getLogger(name).setLevel(level)
-
 set_global_logging_level(logging.ERROR, ["transformers", "nlp", "torch", "tensorflow", "tensorboard", "wandb"])
 
 def eval(args, model, val_loader):
@@ -75,7 +59,7 @@ def eval(args, model, val_loader):
                 all_preds = []
                 for i in range(len(input_ids)):
                     logits = model(input_ids[i].to(args.device), attn_masks[i].to(args.device))
-                    loss = criterion(logits, list_labels[i].to(args.device))
+                    loss = criterion(logits.to(args.device), list_labels[i].to(args.device))
 
                     num_snippets += input_ids[i].size(0)
                     batch_loss += loss.item() * input_ids[i].size(0)
@@ -161,8 +145,8 @@ def train(args, train_loader, val_loader):
                 num_snippets = 0
                 for i in range(len(input_ids)):
 
-                    logits = model(input_ids[i].to(args.device), attn_masks[i].to(args.device))
-                    loss = criterion(logits, labels[i].to(args.device))
+                    logits = model(input_ids[i], attn_masks[i])
+                    loss = criterion(logits.to(args.device), labels[i].to(args.device))
 
                     loss.backward()
                     optimizer.step()
@@ -243,43 +227,10 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
 
     if args.load_data_cache:
-        train_dataset = pickle.load(open(join(args.data_dir,'train_50.pkl'),'rb'))
-        val_dataset = pickle.load(open(join(args.data_dir,'dev_50.pkl'),'rb'))
-        test_dataset = pickle.load(open(join(args.data_dir,'test_50.pkl'),'rb'))
-
+        train_dataset, val_dataset, test_dataset = load_cache(args)
     else:
         #load csv file
-        train_df = pd.read_csv(join(args.data_dir,'train_50.csv'),engine='python')
-        val_df = pd.read_csv(join(args.data_dir,'dev_50.csv'),engine='python')
-        test_df = pd.read_csv(join(args.data_dir,'test_50.csv'),engine='python')
-
-        #load text
-        train_texts = [elem[6:-6] for elem in train_df['TEXT']]
-        val_texts = [elem[6:-6] for elem in val_df['TEXT']]
-        test_texts = [elem[6:-6] for elem in test_df['TEXT']]
-
-        #load and transform labels
-        with open(join(args.data_dir,'TOP_50_CODES.csv'),'r') as f:
-            idx2code = [elem[:-1] for elem in f.readlines()]
-            f.close()
-        code2idx = {elem:i for i, elem in enumerate(idx2code)}
-
-        train_codes = [[code2idx[code] for code in elem.split(';')] for elem in train_df['LABELS']]
-        val_codes = [[code2idx[code] for code in elem.split(';')] for elem in val_df['LABELS']]
-        test_codes = [[code2idx[code] for code in elem.split(';')] for elem in test_df['LABELS']]
-
-        train_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in train_codes]
-        val_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in val_codes]
-        test_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in test_codes]
-
-        #build dataset and dataloader
-        train_dataset = mimic3_dataset(train_texts, train_labels, args.ngram_size, tokenizer, args.use_ngram)
-        val_dataset = mimic3_dataset(val_texts, val_labels, args.ngram_size, tokenizer, args.use_ngram)
-        test_dataset = mimic3_dataset(test_texts, test_labels, args.ngram_size, tokenizer, args.use_ngram)
-
-        pickle.dump(train_dataset, open(join(args.data_dir,'train_50.pkl'),'wb'))
-        pickle.dump(val_dataset, open(join(args.data_dir,'dev_50.pkl'),'wb'))
-        pickle.dump(test_dataset, open(join(args.data_dir,'test_50.pkl'),'wb'))
+        train_dataset, val_dataset, test_dataset = load_data_and_save_cache(args)
 
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=args.batch_size,

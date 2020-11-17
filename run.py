@@ -120,7 +120,6 @@ def train(args, train_loader, val_loader):
                 torch.save(model, args.checkpt_path+'_best_auc.pt')
 
 def set_seed(args):
-    random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     if args.n_gpu > 0:

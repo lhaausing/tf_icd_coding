@@ -20,6 +20,8 @@ n_epochs=60
 seed=66
 checkpt_path=../global_${model_name}_ns${ngram_size}_mp${maxpool_size}_seed${seed}sepcls_invw.pt
 
+cd /scratch/xl3119/tf_icd/tf_icd_coding
+
 singularity \
     exec --nv --overlay $overlay_ext3:ro \
     /beegfs/work/public/singularity/centos-7.8.2003.sif  \

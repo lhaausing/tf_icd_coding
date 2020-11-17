@@ -36,7 +36,6 @@ singularity \
                               --batch_size ${batch_size} \
                               --ngram_size ${ngram_size} \
                               --use_ngram \
-                              --sep_cls \
                               --n_gpu ${n_gpu} \
                               --checkpt_path ${checkpt_path} \
                               --save_best_f1 \

@@ -42,7 +42,7 @@ def eval(args, model, val_loader):
     with torch.no_grad():
         for idx, (input_ids, attn_mask, labels) in tqdm(enumerate(val_loader)):
             if args.use_ngram:
-                ngram_encoding = get_ngram_encoding(attn_mask.to(args.device), args.ngram_size).cpu()
+                ngram_encoding = get_ngram_encoding(args, attn_mask.to(args.device), args.ngram_size).cpu()
                 logits = model(input_ids, ngram_encoding)
                 loss = criterion(logits.to(args.device), labels.to(args.device))
 
@@ -127,7 +127,7 @@ def train(args, train_loader, val_loader):
 
             model.train()
             if args.use_ngram:
-                ngram_encoding = get_ngram_encoding(attn_mask.to(args.device), args.ngram_size).cpu()
+                ngram_encoding = get_ngram_encoding(args, attn_mask.to(args.device), args.ngram_size).cpu()
                 logits = model(input_ids, ngram_encoding)
                 loss = criterion(logits.to(args.device), labels.to(args.device))
 

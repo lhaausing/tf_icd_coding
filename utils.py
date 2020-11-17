@@ -87,7 +87,6 @@ def load_data_and_save_cache(args):
 
 def get_ngram_encoding(args, attn_mask=None, ngram_size=None, sep_cls=True):
 
-    attn_mask = attn_mask.to(args.device)
     sent_lens = torch.sum(attn_mask,1)
     if sep_cls:
         sent_lens -= 1

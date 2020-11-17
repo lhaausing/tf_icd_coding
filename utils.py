@@ -7,7 +7,7 @@ from tqdm import tqdm
 from scipy.sparse import csr_matrix
 from sklearn.metrics import roc_curve, auc
 
-def get_ngram_encoding(attn_mask = None, ngram_size = None, sep_cls = True):
+def get_ngram_encoding(attn_mask=None, ngram_size=None, sep_cls=True):
 
     sent_lens = torch.sum(attn_mask,1)
     if sep_cls:

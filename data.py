@@ -35,18 +35,11 @@ class mimic3_dataset(Dataset):
         return len(self.texts)
 
     def __getitem__(self, key):
-        return [self.idx[key],
-                self.texts[key],
-                self.input_ids[key],
-                self.labels[key],
-                self.attn_mask[key]]
+        return [self.idx[key], self.texts[key], self.input_ids[key], self.attn_mask[key], self.labels[key]]
 
     def mimic3_col_func(self, batch):
         input_ids = torch.LongTensor([elem[2] for elem in batch])
-        attn_mask = torch.Tensor([elem[4] for elem in batch])
-        ngram_encoding = get_ngram_encoding(attn_mask=attn_mask,
-                                            ngram_size=self.ngram_size,
-                                            sep_cls=True)
-        labels = torch.cat([elem[3].unsqueeze(0) for elem in batch], dim=0).type('torch.FloatTensor')
+        attn_mask = torch.Tensor([elem[3] for elem in batch])
+        labels = torch.cat([elem[4].unsqueeze(0) for elem in batch], dim=0).type('torch.FloatTensor')
 
-        return (input_ids, ngram_encoding, attn_mask, labels)
+        return (input_ids, attn_mask, labels)

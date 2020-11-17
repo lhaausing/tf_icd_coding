@@ -87,12 +87,14 @@ def train(args, train_loader, val_loader):
     for i in range(args.n_epochs):
         total_loss = 0.
         num_examples = 0
-        for idx, (input_ids, ngram_encoding, attn_mask, labels) in enumerate(train_loader):
+        for idx, (input_ids, attn_mask, labels) in enumerate(train_loader):
 
             model.train()
-            print(input_ids.size(), ngram_encoding.size())
-            if args.use_ngram: logits = model(input_ids, ngram_encoding)
-            else: logits = model(input_ids)
+            if args.use_ngram:
+                ngram_encoding = get_ngram_encoding(attn_mask.to(args.device), args.ngram_size).cpu()
+                logits = model(input_ids, ngram_encoding)
+            else:
+                logits = model(input_ids)
             loss = criterion(logits.to(args.device), labels.to(args.device))
 
             loss.backward()

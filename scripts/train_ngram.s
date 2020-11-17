@@ -14,11 +14,11 @@
 overlay_ext3=/scratch/xl3119/tf_icd/overlay-10GB-400K.ext3
 model_name=bert_base
 batch_size=32
-ngram_size=32
-maxpool_size=32
+ngram_size=28
 n_gpu=3
-n_epochs=20
-checkpt_path=../cnn_${model_name}_bs${batch_size}_ns${ngram_size}_mp${maxpool_size}_sepcls_invw.pt
+n_epochs=60
+seed=66
+checkpt_path=../global_${model_name}_ns${ngram_size}_mp${maxpool_size}_seed${seed}sepcls_invw.pt
 
 singularity \
     exec --nv --overlay $overlay_ext3:ro \
@@ -28,15 +28,16 @@ singularity \
                   module load gcc/6.3.0; \
                   source /share/apps/anaconda3/5.3.1/etc/profile.d/conda.sh; \
                   conda activate /ext3/cenv; \
-                  python3 main.py \
-                              --data_dir ../data \
+                  python3 run.py \
                               --model_name ../${model_name} \
                               --n_epochs ${n_epochs} \
                               --batch_size ${batch_size} \
                               --ngram_size ${ngram_size} \
-                              --maxpool_size ${maxpool_size} \
                               --use_ngram \
                               --sep_cls \
-                              --inv_w \
                               --n_gpu ${n_gpu} \
-                              --checkpt_path ${checkpt_path} "
+                              --checkpt_path ${checkpt_path} \
+                              --save_best_f1 \
+                              --save_best_auc \
+                              --data_dir ../data \
+                              --seed ${seed} "

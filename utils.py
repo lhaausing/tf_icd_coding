@@ -32,63 +32,6 @@ def get_ngram_encoding(attn_mask = None, ngram_size = None, sep_cls = True):
 
     return ngram_encoding.type(torch.FloatTensor)
 
-def early_stop(metrics_hist, criterion, patience):
-    if not np.all(np.isnan(metrics_hist[criterion])):
-        if len(metrics_hist[criterion]) >= patience:
-            if criterion == 'loss_dev':
-                return np.nanargmin(metrics_hist[criterion]) < len(metrics_hist[criterion]) - patience
-            else:
-                return np.nanargmax(metrics_hist[criterion]) < len(metrics_hist[criterion]) - patience
-    else:
-        return False
-
-def save_metrics(metrics_hist_all, model_dir):
-    with open(model_dir + "/metrics.json", 'w') as metrics_file:
-        #concatenate dev, train metrics into one dict
-        data = metrics_hist_all[0].copy()
-        data.update({"%s_te" % (name):val for (name,val) in metrics_hist_all[1].items()})
-        data.update({"%s_tr" % (name):val for (name,val) in metrics_hist_all[2].items()})
-        json.dump(data, metrics_file, indent=1)
-
-def save_everything(args, metrics_hist_all, model, model_dir, params, criterion, evaluate=False):
-
-    save_metrics(metrics_hist_all, model_dir)
-
-    if not evaluate:
-        #save the model with the best criterion metric
-        if not np.all(np.isnan(metrics_hist_all[0][criterion])):
-            if criterion == 'loss_dev':
-                eval_val = np.nanargmin(metrics_hist_all[0][criterion])
-            else:
-                eval_val = np.nanargmax(metrics_hist_all[0][criterion])
-
-            if eval_val == len(metrics_hist_all[0][criterion]) - 1:
-                sd = model.cpu().state_dict()
-                torch.save(sd, model_dir + "/model_best_%s.pth" % criterion)
-                if args.gpu >= 0:
-                    model.cuda(args.gpu)
-    print("saved metrics, params, model to directory %s\n" % (model_dir))
-
-def print_metrics(metrics):
-    print()
-    if "auc_macro" in metrics.keys():
-        print("[MACRO] accuracy, precision, recall, f-measure, AUC")
-        print("%.4f, %.4f, %.4f, %.4f, %.4f" % (metrics["acc_macro"], metrics["prec_macro"], metrics["rec_macro"], metrics["f1_macro"], metrics["auc_macro"]))
-    else:
-        print("[MACRO] accuracy, precision, recall, f-measure")
-        print("%.4f, %.4f, %.4f, %.4f" % (metrics["acc_macro"], metrics["prec_macro"], metrics["rec_macro"], metrics["f1_macro"]))
-
-    if "auc_micro" in metrics.keys():
-        print("[MICRO] accuracy, precision, recall, f-measure, AUC")
-        print("%.4f, %.4f, %.4f, %.4f, %.4f" % (metrics["acc_micro"], metrics["prec_micro"], metrics["rec_micro"], metrics["f1_micro"], metrics["auc_micro"]))
-    else:
-        print("[MICRO] accuracy, precision, recall, f-measure")
-        print("%.4f, %.4f, %.4f, %.4f" % (metrics["acc_micro"], metrics["prec_micro"], metrics["rec_micro"], metrics["f1_micro"]))
-    for metric, val in metrics.items():
-        if metric.find("rec_at") != -1:
-            print("%s: %.4f" % (metric, val))
-    print()
-
 def union_size(yhat, y, axis):
     #axis=0 for label-level union (macro). axis=1 for instance-level
     return np.logical_or(yhat, y).sum(axis=axis).astype(float)

@@ -64,10 +64,7 @@ class NGramTransformer(nn.Module):
 
     def forward(self, input_ids=None, ngram_encoding=None):
         embeds = torch.bmm(ngram_encoding, self.wd_emb(input_ids))
-        if "distil" in self.model_name:
-            embeds = self.bert(input_embeds=embeds)
-        else:
-            embeds, cls_embeds  = self.bert(inputs_embeds=embeds)
+        embeds, cls_embeds  = self.bert(inputs_embeds=embeds)
         logits = self.out_layer(embeds[:,0,:])
 
         return logits

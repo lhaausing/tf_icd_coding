@@ -69,12 +69,13 @@ def train(model_name, train_loader, val_loader, inv_w, tokenizer, device, ngram_
     # Define model, parallel training, optimizer.
     if local_model:
         model = local_bert(model_name).to(device)
-    elif not use_ngram:
-        model = cnn_bert(model_name, ngram_size, maxpool_size, sep_cls=sep_cls).to(device)
-    elif attn:
-        model = NGramTransformer_Attn(model_name, ngram_size).to(device)
+    elif use_ngram:
+        if attn:
+            model = NGramTransformer_Attn(model_name, ngram_size).to(device)
+        else:
+            model = NGramTransformer(model_name, ngram_size).to(device)
     else:
-        model = NGramTransformer(model_name, ngram_size).to(device)
+        model = cnn_bert(model_name, ngram_size, maxpool_size, sep_cls=sep_cls).to(device)
 
     if n_gpu > 1:
         device_ids = [_ for _ in range(n_gpu)]
@@ -111,5 +112,7 @@ def train(model_name, train_loader, val_loader, inv_w, tokenizer, device, ngram_
             num_examples += logits.size()[0]
 
         print('Average train loss after epoch {} is {}.'.format(str(i+1),str(total_loss / num_examples)))
+
         eval(model, tokenizer, val_loader, inv_w, device, ngram_size, use_ngram)
+
         torch.save(model, checkpt_path)

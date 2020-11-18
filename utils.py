@@ -102,9 +102,9 @@ def load_data_and_save_tensor_cache(args, tokenizer):
     val_texts = [elem[6:-6] for elem in val_df['TEXT']]
     test_texts = [elem[6:-6] for elem in test_df['TEXT']]
 
-    train_inputs = tokenizer([elem for elem in train_texts], return_tensors='pt', padding=True)
-    val_inputs = tokenizer([elem for elem in val_texts], return_tensors='pt', padding=True)
-    test_inputs = tokenizer([elem for elem in train_texts], return_tensors='pt', padding=True)
+    train_inputs = tokenizer(train_texts, return_tensors='pt', padding=True)
+    val_inputs = tokenizer(val_texts, return_tensors='pt', padding=True)
+    test_inputs = tokenizer(test_texts, return_tensors='pt', padding=True)
 
     #load and transform labels
     with open(join(args.data_dir,'TOP_50_CODES.csv'),'r') as f:

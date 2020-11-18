@@ -185,7 +185,7 @@ def train(args, train_loader, val_loader):
                 torch.save(model, args.checkpt_path+'_best_auc.pt')
 
         history_metrics.append({'epoch':i, 'metrics':metrics})
-        torch.save(model, args.checkpt_path+'_last.pt'))
+        torch.save(model, args.checkpt_path+'_last.pt')
         pickle.dump({'best_f1': best_f1,
                      'best_auc': best_auc,
                      'hist':history_metrics}, open(args.checkpt_path+'_hist.pkl','wb'))

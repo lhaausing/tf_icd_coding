@@ -18,7 +18,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import TensorDataset, Dataset, DataLoader
 
 import transformers
 from transformers import AutoTokenizer, AutoModel
@@ -105,7 +105,7 @@ def eval(args, model, val_loader):
 def train(args, train_loader, val_loader):
     # Define model, parallel training, optimizer.
     if args.use_ngram: model = NGramTransformer(args.model_name,args.ngram_size)
-    else: model = local_bert(args.model_name)
+    else: model = snippet_bert(args.model_name)
     model = model.to(args.device)
 
     if args.n_gpu > 1:
@@ -113,14 +113,23 @@ def train(args, train_loader, val_loader):
         model = torch.nn.DataParallel(model, device_ids=device_ids)
     optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad],lr=float(args.lr),eps=float(args.eps))
 
+    history_metrics = []
+    start_epoch = 0
+    best_f1 = 0.
+    best_auc = 0.
+    if args.train_from_checkpt:
+        model = torch.load(args.checkpt_path+'_last.pt'))
+        history = pickle.load(open(args.checkpt_path+'_hist.pkl','rb'))
+        history_metrics = history['hist'][-1]['epoch']
+        best_f1 = hist['best_f1']
+        best_auc = hist['best_auc']
+        start_epoch = history_metrics[-1]['epoch']
+
     criterion = torch.nn.BCEWithLogitsLoss()
     model.zero_grad()
 
-    best_f1 = 0.
-    best_auc = 0.
-
     #Train
-    for i in range(args.n_epochs):
+    for i in range(start_epoch, args.n_epochs):
         total_loss = 0.
         num_examples = 0
         for idx, (input_ids, attn_mask, labels) in tqdm(enumerate(train_loader)):
@@ -175,6 +184,13 @@ def train(args, train_loader, val_loader):
                 best_auc = metrics["auc_micro"]
                 torch.save(model, args.checkpt_path+'_best_auc.pt')
 
+        history_metrics.append({'epoch':i, 'metrics':metrics})
+        torch.save(model, args.checkpt_path+'_last.pt'))
+        pickle.dump({'best_f1': best_f1,
+                     'best_auc': best_auc,
+                     'hist':history_metrics}, open(args.checkpt_path+'_hist.pkl','wb'))
+
+
 def set_seed(args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -215,6 +231,8 @@ def main():
                         help="load_data_cache.")
     parser.add_argument("--checkpt_path", default="./model", type=str,
                         help="Saving dir of the final checkpoint.")
+    parser.add_argument("--train_from_checkpt", action="store_true",
+                        help="Do you want to train for checkpoints you have? You'll also have a eval metric history.")
     parser.add_argument("--save_best_f1", action="store_true",
                         help="save best f1 checkpoints.")
     parser.add_argument("--save_best_auc", action="store_true",
@@ -226,24 +244,44 @@ def main():
     #define tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
 
-    if args.load_data_cache:
-        train_dataset, val_dataset, test_dataset = load_cache(args)
-    else:
-        #load csv file
-        train_dataset, val_dataset, test_dataset = load_data_and_save_cache(args)
+    if args.use_ngram:
+        if args.load_data_cache:
+            train_dataset, val_dataset, test_dataset = load_cache(args)
+        else:
+            #load csv file
+            train_dataset, val_dataset, test_dataset = load_data_and_save_cache(args)
 
-    train_loader = DataLoader(dataset=train_dataset,
-                              batch_size=args.batch_size,
-                              collate_fn=train_dataset.mimic3_col_func,
-                              shuffle=True)
-    val_loader = DataLoader(dataset=val_dataset,
-                            batch_size=args.batch_size,
-                            collate_fn=val_dataset.mimic3_col_func,
-                            shuffle=True)
-    test_loader = DataLoader(dataset=test_dataset,
-                             batch_size=args.batch_size,
-                             collate_fn=test_dataset.mimic3_col_func,
-                             shuffle=True)
+        train_loader = DataLoader(dataset=train_dataset,
+                                  batch_size=args.batch_size,
+                                  collate_fn=train_dataset.mimic3_col_func,
+                                  shuffle=True)
+        val_loader = DataLoader(dataset=val_dataset,
+                                batch_size=args.batch_size,
+                                collate_fn=val_dataset.mimic3_col_func,
+                                shuffle=True)
+        test_loader = DataLoader(dataset=test_dataset,
+                                 batch_size=args.batch_size,
+                                 collate_fn=test_dataset.mimic3_col_func,
+                                 shuffle=True)
+    else:
+        if args.load_data_cache:
+            train_dataset, val_dataset, test_dataset = load_tensor_cache(args)
+        else:
+            print('Start preprocessing local bert data.')
+            sys.stdout.flush()
+            train_dataset, val_dataset, test_dataset = load_data_and_save_tensor_cache(args)
+            print('finished')
+            sys.stdout.flush()
+
+        train_loader = DataLoader(dataset=train_dataset,
+                                  batch_size=args.batch_size,
+                                  shuffle=True)
+        val_loader = DataLoader(dataset=val_dataset,
+                                batch_size=args.batch_size,
+                                shuffle=True)
+        test_loader = DataLoader(dataset=test_dataset,
+                                 batch_size=args.batch_size,
+                                 shuffle=True)
 
     print('Data loader is loaded, start training.')
     sys.stdout.flush()

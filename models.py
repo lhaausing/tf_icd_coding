@@ -182,3 +182,29 @@ class local_bert(nn.Module):
         logits = self.fc(x_cls)
 
         return logits
+
+class snippet_bert(nn.Module):
+    def __init__(self, model_name='', n_class = 50):
+        super().__init__()
+        #Transformers Encoder
+        self.bert = AutoModel.from_pretrained(model_name)
+
+        #hyperparams
+        self.model_name = model_name
+        self.c = n_class
+        self.hid = self.bert.config.hidden_size
+
+        #model blocks
+        self.fc = nn.Linear(self.hid, self.c)
+
+    def forward(self, input_ids, attn_masks):
+        #Calculate sample windows
+
+        #Pass input_windows ids to BERT
+        #Concatenate all pooled outputs
+        _, x_cls = self.bert(input_ids=input_ids,attention_mask=attn_masks)
+
+        #Fully Connected Layer
+        logits = self.fc(x_cls)
+
+        return logits

@@ -16,7 +16,7 @@ ngram_size=28
 n_gpu=8
 n_epochs=20
 seed=28
-checkpt_path=../ngram_bs${batch_size}_seed${seed}
+checkpt_path=../checkpoints/local_bs${batch_size}_seed${seed}
 
 module load anaconda3/gpu/5.2.0
 module load cuda/10.1.105
@@ -24,11 +24,15 @@ module load gcc/8.1.0
 source activate bento
 export PYTHONPATH=/gpfs/share/apps/anaconda3/gpu/5.2.0/envs/bento/lib/python3.8/site-packages:$PYTHONPATH
 
+cd /gpfs/scratch/xl3119/tf_icd_coding
+
 python run.py \
+  --seed ${seed} \
   --data_dir ../data \
   --model_name ${model_name} \
   --n_epochs ${n_epochs} \
   --batch_size ${batch_size} \
+  --n_gpu ${n_gpu} \
   --checkpt_path ${checkpt_path} \
   #--load_data_cache \
   --save_best_f \

@@ -16,7 +16,7 @@ ngram_size=28
 n_gpu=8
 n_epochs=60
 seed=28
-checkpt_path=../ngram_bs${batch_size}_seed${seed}
+checkpt_path=../checkpoints/ngram_bs${batch_size}_seed${seed}
 
 module load anaconda3/gpu/5.2.0
 module load cuda/10.1.105

@@ -11,7 +11,7 @@
 #SBATCH --mail-user=xl3119@nyu.edu
 
 model_name=bert-base-uncased
-batch_size=64
+batch_size=32
 ngram_size=28
 n_gpu=8
 n_epochs=20

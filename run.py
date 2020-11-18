@@ -249,7 +249,7 @@ def main():
             train_dataset, val_dataset, test_dataset = load_cache(args)
         else:
             #load csv file
-            train_dataset, val_dataset, test_dataset = load_data_and_save_cache(args)
+            train_dataset, val_dataset, test_dataset = load_data_and_save_cache(args, tokenizer)
 
         train_loader = DataLoader(dataset=train_dataset,
                                   batch_size=args.batch_size,
@@ -269,7 +269,7 @@ def main():
         else:
             print('Start preprocessing local bert data.')
             sys.stdout.flush()
-            train_dataset, val_dataset, test_dataset = load_data_and_save_tensor_cache(args)
+            train_dataset, val_dataset, test_dataset = load_data_and_save_tensor_cache(args, tokenizer)
             print('finished')
             sys.stdout.flush()
 

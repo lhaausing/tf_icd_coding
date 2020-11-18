@@ -57,7 +57,7 @@ def load_tensor_cache(args):
 
     return train_dataset, val_dataset, test_dataset
 
-def load_data_and_save_cache(args):
+def load_data_and_save_cache(args, tokenizer):
     train_df = pd.read_csv(join(args.data_dir,'train_50.csv'),engine='python')
     val_df = pd.read_csv(join(args.data_dir,'dev_50.csv'),engine='python')
     test_df = pd.read_csv(join(args.data_dir,'test_50.csv'),engine='python')
@@ -92,7 +92,7 @@ def load_data_and_save_cache(args):
 
     return train_dataset, val_dataset, test_dataset
 
-def load_data_and_save_tensor_cache(args):
+def load_data_and_save_tensor_cache(args, tokenizer):
     train_df = pd.read_csv(join(args.data_dir,'train_50.csv'),engine='python')
     val_df = pd.read_csv(join(args.data_dir,'dev_50.csv'),engine='python')
     test_df = pd.read_csv(join(args.data_dir,'test_50.csv'),engine='python')
@@ -102,9 +102,9 @@ def load_data_and_save_tensor_cache(args):
     val_texts = [elem[6:-6] for elem in val_df['TEXT']]
     test_texts = [elem[6:-6] for elem in test_df['TEXT']]
 
-    train_inputs = self.tokenizer([elem for elem in train_texts], return_tensors='pt', padding=True)
-    val_inputs = self.tokenizer([elem for elem in val_texts], return_tensors='pt', padding=True)
-    test_inputs = self.tokenizer([elem for elem in train_texts], return_tensors='pt', padding=True)
+    train_inputs = tokenizer([elem for elem in train_texts], return_tensors='pt', padding=True)
+    val_inputs = tokenizer([elem for elem in val_texts], return_tensors='pt', padding=True)
+    test_inputs = tokenizer([elem for elem in train_texts], return_tensors='pt', padding=True)
 
     #load and transform labels
     with open(join(args.data_dir,'TOP_50_CODES.csv'),'r') as f:

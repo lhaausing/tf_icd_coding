@@ -122,7 +122,7 @@ def load_data_and_save_tensor_cache(args, tokenizer):
 
     train_labels = torch.cat([elem.unsqueeze(0) for elem in train_labels], dim=0).type('torch.FloatTensor')
     val_labels = torch.cat([elem.unsqueeze(0) for elem in val_labels], dim=0).type('torch.FloatTensor')
-    train_labels = torch.cat([elem.unsqueeze(0) for elem in train_labels], dim=0).type('torch.FloatTensor')
+    test_labels = torch.cat([elem.unsqueeze(0) for elem in test_labels], dim=0).type('torch.FloatTensor')
 
     #build dataset and dataloader
     train_dataset = TensorDataset(train_inputs["input_ids"], train_inputs["attention_mask"], train_labels)
@@ -132,6 +132,8 @@ def load_data_and_save_tensor_cache(args, tokenizer):
     pickle.dump(train_dataset, open(join(args.data_dir,'train_50_tensor.pkl'),'wb'))
     pickle.dump(val_dataset, open(join(args.data_dir,'dev_50_tensor.pkl'),'wb'))
     pickle.dump(test_dataset, open(join(args.data_dir,'test_50_tensor.pkl'),'wb'))
+
+    return train_dataset, val_dataset, test_dataset
 
 def get_ngram_encoding(args, attn_mask=None, ngram_size=None, sep_cls=True):
 

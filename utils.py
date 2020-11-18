@@ -120,9 +120,9 @@ def load_data_and_save_tensor_cache(args, tokenizer):
     val_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in val_codes]
     test_labels = [sum([torch.arange(50) == torch.Tensor([code]) for code in sample]) for sample in test_codes]
 
-    train_labels = torch.cat([elem[2].unsqueeze(0) for elem in train_labels], dim=0).type('torch.FloatTensor')
-    val_labels = torch.cat([elem[2].unsqueeze(0) for elem in val_labels], dim=0).type('torch.FloatTensor')
-    train_labels = torch.cat([elem[2].unsqueeze(0) for elem in train_labels], dim=0).type('torch.FloatTensor')
+    train_labels = torch.cat([elem.unsqueeze(0) for elem in train_labels], dim=0).type('torch.FloatTensor')
+    val_labels = torch.cat([elem.unsqueeze(0) for elem in val_labels], dim=0).type('torch.FloatTensor')
+    train_labels = torch.cat([elem.unsqueeze(0) for elem in train_labels], dim=0).type('torch.FloatTensor')
 
     #build dataset and dataloader
     train_dataset = TensorDataset(train_inputs["input_ids"], train_inputs["attention_mask"], train_labels)

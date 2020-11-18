@@ -160,7 +160,7 @@ def get_ngram_encoding(args, attn_mask=None, ngram_size=None, sep_cls=True):
 
     return ngram_encoding.type(torch.FloatTensor)
 
-def get_train_snippets(args, input_ids, attn_masks, labels, max_len=510):
+def get_train_snippets(args, input_ids, attn_masks, labels):
 
     lens = (torch.sum(attn_masks, dim=1)-2).type(torch.IntTensor).tolist()
     n_sni = [args.max_len*(int(elem/args.max_len)+1) for elem in lens]

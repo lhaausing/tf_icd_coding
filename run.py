@@ -53,7 +53,7 @@ def eval(args, model, val_loader):
                 yhat.append(np.round(torch.sigmoid(logits).cpu().detach().numpy()))
                 yhat_raw.append(torch.sigmoid(logits).cpu().detach().numpy())
             else:
-                input_ids, attn_mask, list_labels = get_val_snippets(input_ids, attn_mask, labels, batch_size=args.batch_size, max_len=args.max_len)
+                input_ids, attn_mask, list_labels = get_val_snippets(args, input_ids, attn_mask, labels)
                 batch_loss = 0.
                 num_snippets = 0
                 all_preds = []
@@ -148,7 +148,7 @@ def train(args, train_loader, val_loader):
                 total_loss += loss.item() * logits.size()[0]
 
             else:
-                input_ids, attn_mask, labels = get_train_snippets(input_ids, attn_mask, labels, batch_size=args.batch_size, max_len=args.max_len)
+                input_ids, attn_mask, labels = get_train_snippets(args, input_ids, attn_mask, labels)
 
                 batch_loss = 0.
                 num_snippets = 0

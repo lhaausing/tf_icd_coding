@@ -14,7 +14,7 @@ model_name=bert-base-uncased
 batch_size=64
 ngram_size=28
 n_gpu=8
-n_epochs=60
+n_epochs=20
 seed=28
 checkpt_path=../ngram_bs${batch_size}_seed${seed}
 

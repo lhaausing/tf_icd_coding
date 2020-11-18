@@ -34,6 +34,5 @@ python run.py \
   --batch_size ${batch_size} \
   --n_gpu ${n_gpu} \
   --checkpt_path ${checkpt_path} \
-  #--load_data_cache \
   --save_best_f \
   --save_best_auc

@@ -118,7 +118,7 @@ def train(args, train_loader, val_loader):
     best_f1 = 0.
     best_auc = 0.
     if args.train_from_checkpt:
-        model = torch.load(args.checkpt_path+'_last.pt'))
+        model = torch.load(args.checkpt_path+'_last.pt')
         history = pickle.load(open(args.checkpt_path+'_hist.pkl','rb'))
         history_metrics = history['hist'][-1]['epoch']
         best_f1 = hist['best_f1']

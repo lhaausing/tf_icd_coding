@@ -215,6 +215,8 @@ def main():
                         help="Size of the N-Gram that one's using.")
     parser.add_argument("--maxpool_size", default=32, type=int,
                         help="Size of the Max-pooling. Probably need to be larger than 28.")
+    parser.add_argument("--max_len", default=384, type=int,
+                        help="sliding window stride. Should be <=510.")
     parser.add_argument("--n_gpu", default=1, type=int,
                         help="Suggested to train on multiple gpus if batch size > 8 and n-gram size < 32.")
     parser.add_argument("--lr", default="2e-5", type=str,

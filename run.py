@@ -153,18 +153,18 @@ def train(args, train_loader, val_loader):
 
                 batch_loss = 0.
                 num_snippets = 0
-                for i in range(len(input_ids)):
+                for _ in range(len(input_ids)):
 
-                    logits = model(input_ids[i], attn_mask[i])
-                    loss = criterion(logits.to(args.device), labels[i].to(args.device))
+                    logits = model(input_ids[_], attn_mask[_])
+                    loss = criterion(logits.to(args.device), labels[_].to(args.device))
 
                     loss.backward()
                     optimizer.step()
                     model.zero_grad()
 
-                    #Aggregating losses
-                    num_snippets += input_ids[i].size(0)
-                    batch_loss += loss.item() * input_ids[i].size(0)
+                    #Aggregatings losses
+                    num_snippets += input_ids[_].size(0)
+                    batch_loss += loss.item() * input_ids[_].size(0)
 
                 num_examples += num_snippets
                 total_loss += batch_loss

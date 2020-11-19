@@ -12,9 +12,8 @@
 
 model_name=bert-base-uncased
 batch_size=32
-ngram_size=28
 n_gpu=8
-n_epochs=20
+n_epochs=60
 seed=28
 checkpt_path=../checkpoints/local_bs${batch_size}_seed${seed}
 

@@ -18,6 +18,8 @@ n_epochs=60
 seed=28
 checkpt_path=../checkpoints/ngram_bs${batch_size}_seed${seed}
 
+echo "type: ngram, model: ${model_name}, batch_size: ${batch_size}, ngram_size: ${ngram_size}, seed: ${seed}"
+
 module load anaconda3/gpu/5.2.0
 module load cuda/10.1.105
 module load gcc/8.1.0

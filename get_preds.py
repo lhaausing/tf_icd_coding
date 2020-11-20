@@ -167,13 +167,13 @@ def main():
     for pt in all_best_f1_names:
         state_dict = torch.load(join(args.checkpt_path,pt+'.pt')).state_dict()
         model.load_state_dict(state_dict)
-        eval(args, model, val_loader, pt)
+        get_preds_and_metrics(args, model, val_loader, pt)
 
     #get snippets for best auc models
     for pt in all_best_auc_names:
         state_dict = torch.load(join(args.checkpt_path,pt+'.pt')).state_dict()
         model.load_state_dict(state_dict)
-        eval(args, model, val_loader, pt)
+        get_preds_and_metrics(args, model, val_loader, pt)
 
 if __name__ == '__main__':
     main()

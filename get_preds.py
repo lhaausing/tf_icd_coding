@@ -139,7 +139,7 @@ def main():
     seeds = '_'.split(args.seeds)
     #get dataloaders
     if args.use_ngram:
-        val_dataset = load_data_cache(args)[1]
+        val_dataset = load_cache(args)[1]
         val_loader = DataLoader(dataset=val_dataset,
                                 batch_size=args.batch_size,
                                 collate_fn=val_dataset.mimic3_col_func,

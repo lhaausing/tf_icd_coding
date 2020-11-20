@@ -199,9 +199,9 @@ def get_train_snippets(args, input_ids, attn_masks, labels):
     final_labels = []
 
     num_blocks = int(math.ceil(len(ids)/args.batch_size))
-    input_ids = [torch.cat(input_ids[args.batch_size*i:args.batch_size*(i+1)], dim=0).cpu() for i in range(num_blocks)]
-    attn_masks = [torch.cat(attn_masks[args.batch_size*i:args.batch_size*(i+1)], dim=0).cpu() for i in range(num_blocks)]
-    labels = [torch.cat(labels[args.batch_size*i:args.batch_size*(i+1)], dim=0).cpu() for i in range(num_blocks)]
+    input_ids = [torch.cat(input_ids[args.batch_size*i:args.batch_size*(i+1)], dim=0) for i in range(num_blocks)]
+    attn_masks = [torch.cat(attn_masks[args.batch_size*i:args.batch_size*(i+1)], dim=0) for i in range(num_blocks)]
+    labels = [torch.cat(labels[args.batch_size*i:args.batch_size*(i+1)], dim=0) for i in range(num_blocks)]
 
     return input_ids, attn_masks, labels
 

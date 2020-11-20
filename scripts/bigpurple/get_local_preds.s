@@ -32,4 +32,4 @@ python get_preds.py \
   --batch_size ${batch_size} \
   --n_gpu ${n_gpu} \
   --checkpt_path ${checkpt_path} \
-  --save_preds_dir = ${save_preds_dir}
+  --save_preds_dir ${save_preds_dir}

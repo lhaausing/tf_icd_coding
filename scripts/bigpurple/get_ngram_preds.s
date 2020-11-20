@@ -35,4 +35,4 @@ python get_preds.py \
   --use_ngram \
   --n_gpu ${n_gpu} \
   --checkpt_path ${checkpt_path} \
-  --save_preds_dir = ${save_preds_dir}
+  --save_preds_dir ${save_preds_dir}

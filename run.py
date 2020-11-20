@@ -252,7 +252,11 @@ def main():
             train_dataset, val_dataset, test_dataset = load_cache(args)
         else:
             #load csv file
+            print('Start preprocessing ngram bert data.')
+            sys.stdout.flush()
             train_dataset, val_dataset, test_dataset = load_data_and_save_cache(args, tokenizer)
+            print('finished')
+            sys.stdout.flush()
 
         train_loader = DataLoader(dataset=train_dataset,
                                   batch_size=args.batch_size,

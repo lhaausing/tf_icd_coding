@@ -1,24 +1,22 @@
 #!/bin/bash
 
-#SBATCH --partition=gpu8_medium
+#SBATCH --partition=gpu4_dev
 #SBATCH --nodes=1
-#SBATCH --tasks-per-node=8
+#SBATCH --tasks-per-node=4
 #SBATCH --cpus-per-task=1
-#SBATCH --time=2-00:00:00
+#SBATCH --time=4:00:00
 #SBATCH --mem-per-cpu=32G
-#SBATCH --gres=gpu:8
+#SBATCH --gres=gpu:4
 #SBATCH --mail-type=END
 #SBATCH --mail-user=xl3119@nyu.edu
 
 model_name=bert-base-uncased
-batch_size=32
+batch_size=64
 ngram_size=28
-n_gpu=8
-n_epochs=60
-seed=28
-checkpt_path=../checkpoints/ngram_bs${batch_size}_seed${seed}
-
-echo "type: ngram, model: ${model_name}, batch_size: ${batch_size}, ngram_size: ${ngram_size}, seed: ${seed}"
+n_gpu=4
+seed=6,23,28,36,66
+checkpt_path=/gpfs/scratch/xl3119/checkpoints
+save_preds_dir=/gpfs/scratch/xl3119/preds
 
 module load anaconda3/gpu/5.2.0
 module load cuda/10.1.105
@@ -28,16 +26,13 @@ export PYTHONPATH=/gpfs/share/apps/anaconda3/gpu/5.2.0/envs/bento/lib/python3.8/
 
 cd /gpfs/scratch/xl3119/tf_icd_coding
 
-python run.py \
-  --seed ${seed} \
+python get_preds.py \
+  --seeds ${seeds} \
   --data_dir ../data \
   --model_name ${model_name} \
-  --n_epochs ${n_epochs} \
   --batch_size ${batch_size} \
   --ngram_size ${ngram_size} \
   --use_ngram \
   --n_gpu ${n_gpu} \
   --checkpt_path ${checkpt_path} \
-  --load_data_cache \
-  --save_best_f \
-  --save_best_auc
+  --save_preds_dir = ${save_preds_dir}

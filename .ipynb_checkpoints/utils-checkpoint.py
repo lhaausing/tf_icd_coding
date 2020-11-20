@@ -384,3 +384,23 @@ def all_metrics(yhat, y, k=8, yhat_raw=None, calc_auc=True):
         metrics.update(roc_auc)
 
     return metrics
+
+def print_metrics(metrics):
+    print()
+    if "auc_macro" in metrics.keys():
+        print("[MACRO] accuracy, precision, recall, f-measure, AUC")
+        print("%.4f, %.4f, %.4f, %.4f, %.4f" % (metrics["acc_macro"], metrics["prec_macro"], metrics["rec_macro"], metrics["f1_macro"], metrics["auc_macro"]))
+    else:
+        print("[MACRO] accuracy, precision, recall, f-measure")
+        print("%.4f, %.4f, %.4f, %.4f" % (metrics["acc_macro"], metrics["prec_macro"], metrics["rec_macro"], metrics["f1_macro"]))
+
+    if "auc_micro" in metrics.keys():
+        print("[MICRO] accuracy, precision, recall, f-measure, AUC")
+        print("%.4f, %.4f, %.4f, %.4f, %.4f" % (metrics["acc_micro"], metrics["prec_micro"], metrics["rec_micro"], metrics["f1_micro"], metrics["auc_micro"]))
+    else:
+        print("[MICRO] accuracy, precision, recall, f-measure")
+        print("%.4f, %.4f, %.4f, %.4f" % (metrics["acc_micro"], metrics["prec_micro"], metrics["rec_micro"], metrics["f1_micro"]))
+    for metric, val in metrics.items():
+        if metric.find("rec_at") != -1:
+            print("%s: %.4f" % (metric, val))
+    print()

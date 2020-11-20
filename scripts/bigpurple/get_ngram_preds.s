@@ -14,7 +14,7 @@ model_name=bert-base-uncased
 batch_size=64
 ngram_size=28
 n_gpu=4
-seed=6,23,28,36,66
+seed="6,23,28,36,66"
 checkpt_path=/gpfs/scratch/xl3119/checkpoints
 save_preds_dir=/gpfs/scratch/xl3119/preds
 

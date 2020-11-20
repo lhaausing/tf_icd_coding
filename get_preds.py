@@ -122,7 +122,7 @@ def main():
                         help="Suggested to train on multiple gpus if batch size > 8 and n-gram size < 32.")
     parser.add_argument("--device", default="cuda:0", type=str,
                         help="Normally this doesn't matter.")
-    parser.add_argument("--seeds", type=str, default="6,23,28,36,66",
+    parser.add_argument("--seeds", type=str, default="6-23-28-36-66",
                         help="You need to provide a bunch of seeds here, splitted by _ .")
     parser.add_argument("--data_dir", default=None, type=str, required=True,
                         help="The input data dir. It should contain a training set and a validation set.")

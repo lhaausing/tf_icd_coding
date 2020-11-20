@@ -123,7 +123,7 @@ def main():
     parser.add_argument("--device", default="cuda:0", type=str,
                         help="Normally this doesn't matter.")
     parser.add_argument("--seeds", type=str, default="6,23,28,36,66",
-                        help="You need to provide a bunch of seeds here, splitted by \',\' .")
+                        help="You need to provide a bunch of seeds here, splitted by _ .")
     parser.add_argument("--data_dir", default=None, type=str, required=True,
                         help="The input data dir. It should contain a training set and a validation set.")
     parser.add_argument("--checkpt_path", default="/gpfs/scratch/xl3119/checkpoints", type=str,
@@ -136,7 +136,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
 
     #get the exact seeds
-    seeds = ','.split(args.seeds)
+    seeds = '_'.split(args.seeds)
     #get dataloaders
     if args.use_ngram:
         val_dataset = load_data_cache(args)[1]

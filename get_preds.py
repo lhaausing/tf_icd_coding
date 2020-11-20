@@ -159,6 +159,8 @@ def main():
         all_best_auc_names = ['local_bs{}_seed{}_best_auc'.format(args.batch_size, seed) for seed in seeds]
         model = snippet_bert(args.model_name)
 
+    model = model.to(args.device)
+
     if args.n_gpu > 1:
         device_ids = [_ for _ in range(args.n_gpu)]
         model = torch.nn.DataParallel(model, device_ids=device_ids)

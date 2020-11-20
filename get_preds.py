@@ -136,7 +136,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
 
     #get the exact seeds
-    seeds = '-'.split(args.seeds)
+    seeds = args.seeds.split("-")
     #get dataloaders
     if args.use_ngram:
         val_dataset = load_cache(args)[1]

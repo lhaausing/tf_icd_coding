@@ -28,6 +28,8 @@ from data import *
 from utils import *
 from models import *
 
+set_global_logging_level(logging.ERROR, ["transformers", "nlp", "torch", "tensorflow", "tensorboard", "wandb"])
+
 def get_preds_and_metrics(args, model, val_loader, pt):
     model.eval()
     total_loss = 0.

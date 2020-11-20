@@ -58,11 +58,11 @@ def eval(args, model, val_loader):
                 batch_loss = 0.
                 num_snippets = 0
                 all_preds = []
-                for i in range(len(input_ids)):
-                    logits = model(input_ids[i].to(args.device), attn_mask[i].to(args.device))
-                    loss = criterion(logits.to(args.device), list_labels[i].to(args.device))
+                for _ in range(len(input_ids)):
+                    logits = model(input_ids[_].to(args.device), attn_mask[_].to(args.device))
+                    loss = criterion(logits.to(args.device), list_labels[_].to(args.device))
 
-                    num_snippets += input_ids[i].size(0)
+                    num_snippets += input_ids[_].size(0)
                     batch_loss += loss.item() * input_ids[i].size(0)
 
                     logits = torch.mean(torch.sigmoid(logits), dim=0)
@@ -107,7 +107,7 @@ def train(args, train_loader, val_loader):
     # Define model, parallel training, optimizer.
     if args.use_ngram: model = NGramTransformer(args.model_name,args.ngram_size)
     else: model = snippet_bert(args.model_name)
-    #model = model.to(args.device)
+    model = model.to(args.device)
 
     if args.n_gpu > 1:
         device_ids = [_ for _ in range(args.n_gpu)]

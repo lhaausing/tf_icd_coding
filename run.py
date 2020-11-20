@@ -107,7 +107,7 @@ def train(args, train_loader, val_loader):
     # Define model, parallel training, optimizer.
     if args.use_ngram: model = NGramTransformer(args.model_name,args.ngram_size)
     else: model = snippet_bert(args.model_name)
-    model = model.to(args.device)
+    #model = model.to(args.device)
 
     if args.n_gpu > 1:
         device_ids = [_ for _ in range(args.n_gpu)]

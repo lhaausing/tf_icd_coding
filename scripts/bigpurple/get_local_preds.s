@@ -11,7 +11,7 @@
 #SBATCH --mail-user=xl3119@nyu.edu
 
 model_name=bert-base-uncased
-batch_size=64
+batch_size=32
 n_gpu=4
 seeds=6-23-28-36-66
 checkpt_path=/gpfs/scratch/xl3119/checkpoints
